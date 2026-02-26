@@ -189,7 +189,10 @@ class RobotEnv(gym.Env[np.ndarray, int]):
             max_dist = (self.world.width ** 2 + self.world.height ** 2) ** 0.5
             dist_norm = float(np.clip(raw_dist / max_dist, 0.0, 1.0))
             goal_angle = float(np.arctan2(dy, dx))
-            base += [dist_norm, float(np.sin(goal_angle)), float(np.cos(goal_angle))]
+            # Relative bearing to goal is easier for policies to learn than absolute angle.
+            rel_angle = goal_angle - angle_rad
+            rel_angle = float(np.arctan2(np.sin(rel_angle), np.cos(rel_angle)))
+            base += [dist_norm, float(np.sin(rel_angle)), float(np.cos(rel_angle))]
         return np.array(base, dtype=np.float32)
 
     def reset(
@@ -327,7 +330,6 @@ class RobotEnv(gym.Env[np.ndarray, int]):
             # ── Base displacement reward ─────────────────────────────────────
             # Moving through open space is rewarded.
             # Rotating in place (differential drive) → displacement ≈ 0.
-            # We don't penalise rotation here so the model isn't afraid to turn.
             danger = min_dist < 0.5
             if danger:
                 # In danger zone: no displacement bonus, scale down proximity penalty
@@ -343,6 +345,11 @@ class RobotEnv(gym.Env[np.ndarray, int]):
                 # the model from spinning in place when nothing is visible.
                 if mean_dist > 0.85 and displacement > 0.5:
                     reward += 0.05
+                # Idle penalty: discourage stopping/spinning in wide open space.
+                if mean_dist > 0.85 and displacement < 0.3:
+                    reward -= 0.02
+                    if action in {1, 2}:
+                        reward -= 0.01
 
             # ── Goal-directed rewards (only for goal environments) ────────────
             if self.has_goal:
