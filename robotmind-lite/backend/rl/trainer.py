@@ -590,7 +590,9 @@ class TrainingManager:
 
     async def cancel_training(self) -> dict[str, str]:
         """Cancel ongoing training and reset the task."""
+        run_id_to_cancel: int | None = None
         async with self._state_lock:
+            run_id_to_cancel = self._state.run_id
             if self._task is not None:
                 self._task.cancel()
                 try:
@@ -599,6 +601,12 @@ class TrainingManager:
                     pass
             self._task = None
             self._state = TrainingState()
+        # Update the DB record so the polling endpoint returns "cancelled" instead of "running"
+        if run_id_to_cancel is not None:
+            try:
+                update_training_run(run_id_to_cancel, status="cancelled")
+            except Exception:
+                pass
         return {"status": "cancelled", "message": "Training task cleared"}
 
     def _get_gpu_info(self) -> dict[str, object]:

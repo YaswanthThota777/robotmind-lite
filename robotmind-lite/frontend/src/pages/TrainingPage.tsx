@@ -3,7 +3,7 @@
  * Does NOT use the legacy Sidebar or Header components to avoid
  * any stale-cache issues and to give a clean project-focused UI.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SimulationCanvas } from "../components/SimulationCanvas";
 import { ConsolePanel } from "../components/ConsolePanel";
 import { NotificationBanner } from "../components/NotificationBanner";
@@ -117,6 +117,9 @@ export const TrainingPage = ({
   const [showNotification, setShowNotification] = useState(false);
   const [showModelManager, setShowModelManager] = useState(false);
   const [isStarting,       setIsStarting]       = useState(false);
+  // Tracks when the user just clicked Stop so we don't auto-reactivate training
+  // from a stale polling response before the DB update propagates.
+  const cancellingRef = useRef(false);
   const [activeTab,        setActiveTab]        = useState<"control"|"sensors"|"advanced">("control");
   const [syncedProfile,    setSyncedProfile]    = useState(false);
 
@@ -138,8 +141,17 @@ export const TrainingPage = ({
 
   // If backend reports idle/stopped while we think training is active, sync up
   useEffect(() => {
+    if (status.trainingState !== "running") {
+      // Clear the cancelling flag once the backend confirms it stopped
+      cancellingRef.current = false;
+    }
     if (isTrainingActive && status.trainingState && status.trainingState !== "running") {
       setIsTrainingActive(false);
+    }
+    // Auto-detect: if a training run is active on the backend (e.g. after page reload)
+    // and the local state doesn't know about it yet, sync up.
+    if (!isTrainingActive && !trainingComplete && status.trainingState === "running" && !cancellingRef.current) {
+      setIsTrainingActive(true);
     }
   }, [status.trainingState]);
 
@@ -269,6 +281,9 @@ export const TrainingPage = ({
   };
 
   const handleCancelTraining = async () => {
+    // Raise the flag BEFORE the request so the auto-detect effect doesn't
+    // re-activate training during the brief DB propagation window.
+    cancellingRef.current = true;
     try {
       const res    = await fetch(`${apiBase}/cancel-training`, { method: "POST" });
       const result = await res.json();
