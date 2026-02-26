@@ -134,6 +134,12 @@ export const TrainingPage = ({
   // Tracks when the user just clicked Stop so we don't auto-reactivate training
   // from a stale polling response before the DB update propagates.
   const cancellingRef = useRef(false);
+  // Incremented every time a new training run succeeds — forces SimulationCanvas
+  // to fully remount (fresh canvas, no stale old-run pixels).
+  const [trainingKey,      setTrainingKey]      = useState(0);
+  // The run_id that THIS project component started. Auto-detect will only fire
+  // for this run — prevents other projects' training from bleeding in as "active".
+  const activeRunIdRef = useRef<number | null>(null);
   const [activeTab,        setActiveTab]        = useState<"control"|"sensors"|"advanced">("control");
   const [syncedProfile,    setSyncedProfile]    = useState(false);
 
@@ -164,7 +170,12 @@ export const TrainingPage = ({
     }
     // Auto-detect: if a training run is active on the backend (e.g. after page reload)
     // and the local state doesn't know about it yet, sync up.
-    if (!isTrainingActive && !trainingComplete && status.trainingState === "running" && !cancellingRef.current) {
+    // ONLY fire if the running run_id matches a run WE started — prevents other
+    // projects' training from being shown as active on this project's page.
+    if (!isTrainingActive && !trainingComplete && status.trainingState === "running"
+        && !cancellingRef.current
+        && activeRunIdRef.current !== null
+        && status.runId === activeRunIdRef.current) {
       setIsTrainingActive(true);
     }
   }, [status.trainingState]);
@@ -273,6 +284,8 @@ export const TrainingPage = ({
 
       const result = await res.json();
       resetMetrics();
+      setTrainingKey(k => k + 1);   // remount canvas — clears old simulation frame
+      activeRunIdRef.current = result.run_id ?? null;  // bind this run to this project
       setIsTrainingActive(true);
       setNotification({ message: `Training started! Run: ${result.run_id}`, type: "success" });
       setShowNotification(true);
@@ -482,6 +495,7 @@ export const TrainingPage = ({
           <div className="flex-1 p-3 min-h-0">
             {syncedProfile ? (
               <SimulationCanvas
+                key={trainingKey}
                 onSensors={setSensors}
                 apiBase={apiBase}
                 environmentProfile={trainingConfig.environmentProfile}

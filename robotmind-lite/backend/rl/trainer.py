@@ -206,7 +206,9 @@ class _ProgressCallback(BaseCallback):
         if current - self.last_persisted_step >= 100:
             update_training_run(self.run_id, timesteps_completed=current)
             self.last_persisted_step = current
-        return True
+        # Returning False tells SB3 to stop model.learn() immediately.
+        # This is the only reliable way to interrupt a blocking SB3 training thread.
+        return not self.manager._stop_event.is_set()
 
     def _on_rollout_end(self) -> None:
         metrics = getattr(self.logger, "name_to_value", {})
@@ -227,6 +229,9 @@ class TrainingManager:
         self._thread_lock = threading.Lock()
         self._task: asyncio.Task[None] | None = None
         self._start_time: float | None = None
+        # Event that signals the SB3 training thread to stop gracefully.
+        # Set by cancel_training(); checked in _ProgressCallback._on_step().
+        self._stop_event = threading.Event()
 
     async def start_training(
         self,
@@ -286,6 +291,7 @@ class TrainingManager:
                 last_reward=0.0,
                 last_loss=0.0,
             )
+            self._stop_event.clear()  # allow new training to run
             self._start_time = time.perf_counter()
             self._task = asyncio.create_task(
                 self._run_training(
@@ -591,6 +597,9 @@ class TrainingManager:
     async def cancel_training(self) -> dict[str, str]:
         """Cancel ongoing training and reset the task."""
         run_id_to_cancel: int | None = None
+        # Signal the SB3 training thread to stop at the next callback step.
+        # This must happen BEFORE we await self._task so the thread unblocks quickly.
+        self._stop_event.set()
         async with self._state_lock:
             run_id_to_cancel = self._state.run_id
             if self._task is not None:
