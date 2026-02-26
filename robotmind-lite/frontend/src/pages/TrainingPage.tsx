@@ -296,6 +296,20 @@ export const TrainingPage = ({
   const modelLabel = modelProfiles.find(m => m.key === trainingConfig.modelProfile)?.label
     ?? trainingConfig.modelProfile;
 
+  // ── Smart environment info + model suggestion ─────────────────────────────
+  const selectedEnvProfile = environmentProfiles.find(e => e.key === trainingConfig.environmentProfile);
+  const envHasGoal = selectedEnvProfile?.world_summary?.has_goal ?? false;
+  const isContinuousAlgo = ["SAC", "TD3", "DDPG"].includes(trainingConfig.algorithm);
+  const isComplexEnv = ["warehouse_dense", "narrow_corridor", "maze", "city", "goal_chase", "drone", "legged", "apple_field"]
+    .some(k => trainingConfig.environmentProfile.toLowerCase().includes(k));
+  // deep for goal/complex envs or continuous algos; fast for simple discrete training
+  const suggestedModelKey = (envHasGoal || isComplexEnv) ? "deep" : isContinuousAlgo ? "balanced" : "balanced";
+  const envObjective = envHasGoal
+    ? { label: "🎯 Goal-seeking", hint: "Reach target · avoid obstacles · +100 reward on reach", color: "text-amber-300 border-amber-700/40 bg-amber-900/20" }
+    : isComplexEnv
+    ? { label: "🏗️ Complex navigation", hint: "Navigate dense/complex layout · maximise safe distance", color: "text-blue-300 border-blue-700/40 bg-blue-900/20" }
+    : { label: "🧭 Free navigation", hint: "Avoid obstacles · explore · maximise displacement reward", color: "text-cyan-300 border-cyan-700/40 bg-cyan-900/20" };
+
   return (
     <div className="h-screen flex flex-col bg-night-900 text-slate-100 overflow-hidden">
 
@@ -550,10 +564,25 @@ export const TrainingPage = ({
                         <option key={e.key} value={e.key}>{e.label}</option>
                       ))}
                     </select>
+                    {/* Training objective hint */}
+                    <div className={`mt-1.5 flex flex-col gap-0.5 rounded-lg border px-2.5 py-1.5 ${envObjective.color}`}>
+                      <span className="text-xs font-semibold">{envObjective.label}</span>
+                      <span className="text-xs opacity-80">{envObjective.hint}</span>
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1.5">Model size</label>
+                    <label className="flex justify-between text-xs text-slate-400 mb-1.5">
+                      Model size
+                      {trainingConfig.modelProfile !== suggestedModelKey && (
+                        <button
+                          onClick={() => setTrainingConfig({ ...trainingConfig, modelProfile: suggestedModelKey })}
+                          className="text-cyan-400 hover:text-cyan-300 transition-colors"
+                        >
+                          → Use suggested: {suggestedModelKey}
+                        </button>
+                      )}
+                    </label>
                     <select
                       className="w-full rounded-lg border border-night-600 bg-night-900 px-3 py-2.5
                                  text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
@@ -561,7 +590,9 @@ export const TrainingPage = ({
                       onChange={(e) => setTrainingConfig({ ...trainingConfig, modelProfile: e.target.value })}
                     >
                       {modelProfiles.map((m) => (
-                        <option key={m.key} value={m.key}>{m.label}</option>
+                        <option key={m.key} value={m.key}>
+                          {m.label}{m.key === suggestedModelKey ? " ✓ Suggested" : ""}
+                        </option>
                       ))}
                     </select>
                   </div>

@@ -220,6 +220,19 @@ export const ProjectWizard = ({
   const [envProfile, setEnvProfile] = useState("flat_ground_differential_v1");
   const [algorithm, setAlgorithm] = useState("PPO");
   const [modelProfile, setModelProfile] = useState("balanced");
+
+  // ── Smart model suggestion ─────────────────────────────────────────────────
+  const envHasGoal = envProfile.toLowerCase().includes("goal") ||
+    (environmentProfiles.find(e => e.key === envProfile)?.world_summary?.has_goal ?? false);
+  const wizardContinuousAlgo = ["SAC", "TD3", "DDPG"].includes(algorithm);
+  const wizardComplexEnv = ["warehouse_dense", "narrow_corridor", "maze", "city", "drone", "legged", "apple_field"]
+    .some(k => envProfile.toLowerCase().includes(k));
+  const wizardSuggestedModel = (envHasGoal || wizardComplexEnv) ? "deep" : wizardContinuousAlgo ? "balanced" : "balanced";
+  const wizardEnvObjective = envHasGoal
+    ? { label: "🎯 Goal-seeking", hint: "Reach the target · avoid obstacles · +100 reward on reach" }
+    : wizardComplexEnv
+    ? { label: "🏗️ Complex nav", hint: "Dense/complex layout · maximise safe distance" }
+    : { label: "🧭 Free navigation", hint: "Explore freely · avoid obstacles · displacement reward" };
   const [steps, setSteps] = useState(20000);
   const [noiseEnabled, setNoiseEnabled] = useState(false);
   const [randomSpawn, setRandomSpawn] = useState(true);
@@ -429,27 +442,45 @@ export const ProjectWizard = ({
                   <label className="block text-xs font-semibold text-slate-300 mb-3 uppercase tracking-wider">
                     Model size
                   </label>
+                  {/* Env objective hint */}
+                  <div className="mb-3 rounded-lg border border-cyan-700/40 bg-cyan-900/20 px-3 py-2">
+                    <div className="text-xs font-semibold text-cyan-300">{wizardEnvObjective.label}</div>
+                    <div className="text-xs text-slate-400 mt-0.5">{wizardEnvObjective.hint}</div>
+                  </div>
+
                   <div className="space-y-3">
-                    {MODEL_PROFILES.map((m) => (
-                      <button
-                        key={m.key}
-                        onClick={() => setModelProfile(m.key)}
-                        className={`w-full flex gap-4 items-center p-4 rounded-xl border text-left transition-all
-                          ${modelProfile === m.key
-                            ? "border-violet-500 bg-violet-500/10"
-                            : "border-night-700 bg-night-900 hover:border-slate-600"}`}
-                      >
-                        <span className="text-2xl">{m.icon}</span>
-                        <div className="flex-1">
-                          <div className={`font-semibold text-sm ${modelProfile === m.key ? "text-violet-200" : "text-slate-200"}`}>
-                            {m.label}
+                    {MODEL_PROFILES.map((m) => {
+                      const isSuggested = m.key === wizardSuggestedModel;
+                      return (
+                        <button
+                          key={m.key}
+                          onClick={() => setModelProfile(m.key)}
+                          className={`w-full flex gap-4 items-center p-4 rounded-xl border text-left transition-all
+                            ${modelProfile === m.key
+                              ? "border-violet-500 bg-violet-500/10"
+                              : isSuggested
+                              ? "border-cyan-600/60 bg-cyan-900/10 hover:border-cyan-500"
+                              : "border-night-700 bg-night-900 hover:border-slate-600"}`}
+                        >
+                          <span className="text-2xl">{m.icon}</span>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className={`font-semibold text-sm ${modelProfile === m.key ? "text-violet-200" : "text-slate-200"}`}>
+                                {m.label}
+                              </span>
+                              {isSuggested && (
+                                <span className="text-xs px-1.5 py-0.5 rounded-full bg-cyan-900/40 border border-cyan-700/50 text-cyan-400">
+                                  Suggested
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-slate-500 mt-0.5">{m.desc}</div>
+                            <div className="text-xs text-slate-600 mt-1 font-mono">{m.steps_hint}</div>
                           </div>
-                          <div className="text-xs text-slate-500 mt-0.5">{m.desc}</div>
-                          <div className="text-xs text-slate-600 mt-1 font-mono">{m.steps_hint}</div>
-                        </div>
-                        {modelProfile === m.key && <span className="text-violet-400">✓</span>}
-                      </button>
-                    ))}
+                          {modelProfile === m.key && <span className="text-violet-400">✓</span>}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 

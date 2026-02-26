@@ -183,6 +183,9 @@ export const SimulationCanvas = ({
             ray_count: es.ray_count,
             ray_length: es.ray_length,
             ray_fov_degrees: es.ray_fov_degrees,
+            goal_x: es.goal_x ?? null,
+            goal_y: es.goal_y ?? null,
+            goal_radius: es.goal_radius ?? null,
           };
           backendActiveRef.current = true;
           if (es.sensor_distances || es.rays) {
