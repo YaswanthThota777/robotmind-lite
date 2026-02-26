@@ -102,6 +102,7 @@ class RobotEnv(gym.Env[np.ndarray, int]):
         self.episode_count = 0
         self.last_reward = 0.0
         self.last_collision = False
+        self._last_goal_dist = 0.0  # initialised properly on first reset()
 
         n_actions = 4 if self.reverse_enabled else 3
         self.action_space = spaces.Discrete(n_actions)
@@ -228,6 +229,15 @@ class RobotEnv(gym.Env[np.ndarray, int]):
         self.last_collision = False
         self._last_x = self.world.robot.x
         self._last_y = self.world.robot.y
+        # Track distance to goal so step() can compute delta-distance reward
+        if self.has_goal:
+            gx = self.world.goal_x or 0.0
+            gy = self.world.goal_y or 0.0
+            dx0 = gx - self.world.robot.x
+            dy0 = gy - self.world.robot.y
+            self._last_goal_dist = float(np.sqrt(dx0 * dx0 + dy0 * dy0))
+        else:
+            self._last_goal_dist = 0.0
         return self._get_observation(), {"status": "reset"}
 
     def step(self, action: int) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
@@ -302,38 +312,69 @@ class RobotEnv(gym.Env[np.ndarray, int]):
         observation = self._get_observation()
 
         if collided:
-            # Heavy penalty — a well-trained model should never reach this because
-            # sensors detect obstacles long before any physical contact occurs.
-            reward = -50.0
+            # Moderate penalty — enough to deter collisions but not so large that
+            # the model becomes too fearful to explore open space.
+            reward = -25.0
         else:
-            # Displacement reward: moving through open space is rewarded.
-            # Rotating in place → displacement ≈ 0 → reward ≈ -0.01 (idle cost).
-            # Moving forward → displacement ~4 px → reward ~+0.07.
             dx = self.world.robot.x - prev_x
             dy = self.world.robot.y - prev_y
             displacement = float(np.sqrt(dx * dx + dy * dy))
 
-            # Sensor-based proximity: check BEFORE rewarding forward motion.
-            # observation[:ray_count] are ray distances in [0, 1]
-            # where 1.0 = nothing in range and 0.0 = obstacle right next to robot.
             ray_distances = observation[: self.ray_count]
             min_dist = float(np.min(ray_distances))
+            mean_dist = float(np.mean(ray_distances))
 
-            # Suppress displacement reward in danger zone so the model learns that
-            # moving forward while close to an obstacle is NOT beneficial.
+            # ── Base displacement reward ─────────────────────────────────────
+            # Moving through open space is rewarded.
+            # Rotating in place (differential drive) → displacement ≈ 0.
+            # We don't penalise rotation here so the model isn't afraid to turn.
             danger = min_dist < 0.5
-            reward = (displacement * 0.02 - 0.01) * (0.0 if danger else 1.0) - 0.01 * danger
+            if danger:
+                # In danger zone: no displacement bonus, scale down proximity penalty
+                reward = -0.005 - (0.5 - min_dist) * 3.0
+            else:
+                # Displacement reward: ~+0.07 per forward step in open space
+                reward = displacement * 0.02 - 0.005
+                # Clearance bonus: encourage staying away from walls
+                if min_dist > 0.7:
+                    reward += 0.02
+                # Strong open-space exploration bonus: when sensors are very clear
+                # (robot is in open space), reward forward motion more to prevent
+                # the model from spinning in place when nothing is visible.
+                if mean_dist > 0.85 and displacement > 0.5:
+                    reward += 0.05
 
-            # Proximity penalty: fires early (0.5) so the model steers away with plenty
-            # of room to spare. Coefficient 4.0 makes it clearly outweigh the +0.07
-            # forward step reward, so the model learns avoidance before contact.
-            if min_dist < 0.5:
-                # Scales from 0 at dist=0.5 up to -2.0 at dist=0.0
-                reward -= (0.5 - min_dist) * 4.0
+            # ── Goal-directed rewards (only for goal environments) ────────────
+            if self.has_goal:
+                gx = self.world.goal_x or 0.0
+                gy = self.world.goal_y or 0.0
+                curr_x = self.world.robot.x
+                curr_y = self.world.robot.y
+                curr_dist = float(np.sqrt((curr_x - gx) ** 2 + (curr_y - gy) ** 2))
 
-            # Clearance bonus: encourage keeping all sensors well clear.
-            if min_dist > 0.7:
-                reward += 0.02
+                # Delta-distance reward: every pixel closer to the goal is rewarded.
+                # This creates a smooth gradient that guides the robot without it
+                # needing the sensors to "see" the goal.
+                # +0.3 per step getting closer (≈ 10 px/step → +3.0 on approach)
+                # -0.1 per step drifting further (mild penalty, not catastrophic)
+                delta = self._last_goal_dist - curr_dist  # positive = closer
+                if delta > 0:
+                    reward += delta * 0.3
+                else:
+                    reward += delta * 0.1  # softer penalty for moving away
+                self._last_goal_dist = curr_dist
+
+                # Goal-alignment bonus: reward facing the goal direction, even when
+                # rotating in place. This means the model learns to turn TOWARD the
+                # goal rather than spin randomly when sensors show clear space.
+                goal_angle_rad = float(np.arctan2(gy - curr_y, gx - curr_x))
+                robot_angle_rad = float(np.deg2rad(self.world.robot.angle_degrees))
+                angle_diff = goal_angle_rad - robot_angle_rad
+                # Normalise to [-π, π]
+                angle_diff = float(np.arctan2(np.sin(angle_diff), np.cos(angle_diff)))
+                alignment = float(np.cos(angle_diff))  # 1.0 = facing goal, -1.0 = facing away
+                # Scale: +0.015 when perfectly aligned, -0.015 when facing away
+                reward += alignment * 0.015
 
         # Goal reached — large reward, end episode cleanly
         goal_reached = self.has_goal and self.world.check_goal_reached()
