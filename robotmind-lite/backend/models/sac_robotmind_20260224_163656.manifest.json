@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-02-24T16:36:57.307563",
+  "model_artifacts": {
+    "sb3_zip": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\sac_robotmind_20260224_163656.zip",
+    "onnx": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\sac_robotmind_20260224_163656.onnx"
+  },
+  "metadata": {
+    "algorithm": "SAC",
+    "control_mode": "continuous",
+    "environment_profile": "custom_env_autonomous_driving_city",
+    "environment_label": "Custom autonomous_driving_city",
+    "model_profile": "deep",
+    "model_profile_label": "Deep",
+    "algorithm_params": {
+      "gamma": 0.995,
+      "learning_starts": 500,
+      "buffer_size": 200000
+    },
+    "observation_dim": 21
+  },
+  "validation": {
+    "sb3_runtime": {
+      "ok": true,
+      "action_shape": [
+        1,
+        2
+      ],
+      "observation_dim": 21
+    },
+    "onnx_runtime": {
+      "ok": true,
+      "input_name": "observation",
+      "output_shapes": [
+        [
+          1,
+          2
+        ]
+      ],
+      "observation_dim": 21
+    }
+  }
+}

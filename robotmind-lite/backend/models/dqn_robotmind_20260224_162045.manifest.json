@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-02-24T16:20:45.898529",
+  "model_artifacts": {
+    "sb3_zip": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\dqn_robotmind_20260224_162045.zip",
+    "onnx": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\dqn_robotmind_20260224_162045.onnx"
+  },
+  "metadata": {
+    "algorithm": "DQN",
+    "control_mode": "discrete",
+    "environment_profile": "arena_basic",
+    "environment_label": "Arena Basic",
+    "model_profile": "fast",
+    "model_profile_label": "Fast",
+    "algorithm_params": {
+      "learning_starts": 100,
+      "gamma": 0.97
+    },
+    "observation_dim": 9
+  },
+  "validation": {
+    "sb3_runtime": {
+      "ok": true,
+      "action_shape": [
+        1
+      ],
+      "observation_dim": 9
+    },
+    "onnx_runtime": {
+      "ok": true,
+      "input_name": "observation",
+      "output_shapes": [
+        [
+          1
+        ]
+      ],
+      "observation_dim": 9
+    }
+  }
+}

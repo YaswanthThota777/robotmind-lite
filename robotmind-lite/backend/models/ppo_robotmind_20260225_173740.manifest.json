@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-02-25T17:37:40.879517",
+  "model_artifacts": {
+    "sb3_zip": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\ppo_robotmind_20260225_173740.zip",
+    "onnx": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\ppo_robotmind_20260225_173740.onnx"
+  },
+  "metadata": {
+    "algorithm": "PPO",
+    "control_mode": "discrete",
+    "environment_profile": "custom_env_flat_ground_differential_v1",
+    "environment_label": "Custom flat_ground_differential_v1",
+    "model_profile": "deep",
+    "model_profile_label": "Deep",
+    "algorithm_params": {},
+    "observation_dim": 10
+  },
+  "validation": {
+    "sb3_runtime": {
+      "ok": true,
+      "action_shape": [
+        1
+      ],
+      "observation_dim": 10
+    },
+    "onnx_runtime": {
+      "ok": true,
+      "input_name": "observation",
+      "output_shapes": [
+        [
+          1
+        ]
+      ],
+      "observation_dim": 10
+    }
+  }
+}

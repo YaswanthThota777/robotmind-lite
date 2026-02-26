@@ -1,0 +1,39 @@
+{
+  "generated_at": "2026-02-24T16:30:41.915120",
+  "model_artifacts": {
+    "sb3_zip": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\ppo_robotmind_20260224_163041.zip",
+    "onnx": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\ppo_robotmind_20260224_163041.onnx"
+  },
+  "metadata": {
+    "algorithm": "PPO",
+    "control_mode": "discrete",
+    "environment_profile": "custom_env_arena_basic",
+    "environment_label": "Custom arena_basic",
+    "model_profile": "balanced",
+    "model_profile_label": "Balanced",
+    "algorithm_params": {
+      "n_steps": 128,
+      "gamma": 0.98
+    },
+    "observation_dim": 9
+  },
+  "validation": {
+    "sb3_runtime": {
+      "ok": true,
+      "action_shape": [
+        1
+      ],
+      "observation_dim": 9
+    },
+    "onnx_runtime": {
+      "ok": true,
+      "input_name": "observation",
+      "output_shapes": [
+        [
+          1
+        ]
+      ],
+      "observation_dim": 9
+    }
+  }
+}

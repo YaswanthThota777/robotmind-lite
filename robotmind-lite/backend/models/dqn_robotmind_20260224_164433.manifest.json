@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-02-24T16:44:33.415333",
+  "model_artifacts": {
+    "sb3_zip": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\dqn_robotmind_20260224_164433.zip",
+    "onnx": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\dqn_robotmind_20260224_164433.onnx"
+  },
+  "metadata": {
+    "algorithm": "DQN",
+    "control_mode": "discrete",
+    "environment_profile": "custom_env_software_anomaly_graph",
+    "environment_label": "Custom software_anomaly_graph",
+    "model_profile": "balanced",
+    "model_profile_label": "Balanced",
+    "algorithm_params": {},
+    "observation_dim": 17
+  },
+  "validation": {
+    "sb3_runtime": {
+      "ok": true,
+      "action_shape": [
+        1
+      ],
+      "observation_dim": 17
+    },
+    "onnx_runtime": {
+      "ok": true,
+      "input_name": "observation",
+      "output_shapes": [
+        [
+          1
+        ]
+      ],
+      "observation_dim": 17
+    }
+  }
+}

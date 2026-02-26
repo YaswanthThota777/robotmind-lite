@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RobotMind Lite</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --muted: #94a3b8;
+        --text: #e2e8f0;
+        --accent: #22c55e;
+        --danger: #ef4444;
+        --border: #1f2937;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Space Grotesk", "Trebuchet MS", Verdana, sans-serif;
+        background: linear-gradient(135deg, #0f172a, #111827 60%, #0b1220);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .title {
+        margin: 0 0 8px;
+        font-size: 28px;
+        font-weight: 700;
+      }
+
+      .subtitle {
+        margin: 0 0 24px;
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        background: rgba(17, 24, 39, 0.9);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        animation: fadeIn 0.4s ease both;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .badge.idle {
+        background: #1f2937;
+        color: #e2e8f0;
+      }
+
+      .badge.running {
+        background: rgba(34, 197, 94, 0.2);
+        color: #86efac;
+      }
+
+      .badge.completed {
+        background: rgba(56, 189, 248, 0.2);
+        color: #7dd3fc;
+      }
+
+      .badge.failed {
+        background: rgba(239, 68, 68, 0.2);
+        color: #fca5a5;
+      }
+
+      .progress-track {
+        margin-top: 10px;
+        background: #0b1220;
+        border: 1px solid #1f2937;
+        border-radius: 999px;
+        height: 10px;
+        overflow: hidden;
+      }
+
+      .progress-bar {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, #22c55e, #38bdf8);
+        transition: width 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .card h2 {
+        margin: 0 0 12px;
+        font-size: 18px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      button,
+      input {
+        border-radius: 8px;
+        border: 1px solid #374151;
+        background: #111827;
+        color: var(--text);
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+
+      button {
+        cursor: pointer;
+        background: #1f2937;
+      }
+
+      button.primary {
+        background: #14532d;
+        border-color: #166534;
+      }
+
+      button:hover {
+        filter: brightness(1.08);
+      }
+
+      pre {
+        margin: 10px 0 0;
+        padding: 12px;
+        border-radius: 8px;
+        background: #0b1220;
+        border: 1px solid #1f2937;
+        color: #cbd5e1;
+        overflow: auto;
+        min-height: 72px;
+      }
+
+      .status-row {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 8px;
+        margin: 4px 0;
+      }
+
+      .label {
+        color: var(--muted);
+      }
+
+      .ok {
+        color: var(--accent);
+      }
+
+      .error {
+        color: var(--danger);
+      }
+
+      .footer {
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .run-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 320px;
+        overflow: auto;
+      }
+
+      .run-item {
+        border: 1px solid #1f2937;
+        border-radius: 10px;
+        padding: 12px;
+        background: #0b1220;
+      }
+
+      .run-title {
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+
+      .run-meta {
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 8px;
+      }
+
+      .run-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .detail-panel {
+        margin-top: 12px;
+        border: 1px dashed #1f2937;
+        border-radius: 10px;
+        padding: 12px;
+        background: #0b1220;
+      }
+
+      .chart {
+        width: 100%;
+        height: 180px;
+        border-radius: 10px;
+        border: 1px solid #1f2937;
+        background: #0b1220;
+        margin-top: 10px;
+      }
+
+      .live-canvas {
+        width: 100%;
+        height: 260px;
+        border-radius: 12px;
+        border: 1px solid #1f2937;
+        background: #0b1220;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1 class="title">RobotMind Lite</h1>
+      <p class="subtitle">Beginner robotics trainer (2.5D simulation + RL) — backend control panel</p>
+
+      <div class="grid">
+        <section class="card">
+          <h2>System</h2>
+          <div class="actions">
+            <button id="healthBtn">Check Health</button>
+            <button id="envBtn">Create Environment</button>
+          </div>
+          <pre id="systemOutput">Ready.</pre>
+        </section>
+
+        <section class="card">
+          <h2>Training</h2>
+          <label for="stepsInput">Training Steps</label>
+          <input id="stepsInput" type="number" min="200" max="5000000" value="5000" />
+          <div class="actions">
+            <button id="startBtn" class="primary">Start Training</button>
+            <button id="statusBtn">Refresh Status</button>
+          </div>
+          <pre id="trainOutput">No run started yet.</pre>
+        </section>
+
+        <section class="card">
+          <h2>Status</h2>
+          <div class="status-row"><div class="label">Run ID</div><div id="runId">-</div></div>
+          <div class="status-row"><div class="label">State</div><div id="runState" class="badge idle">idle</div></div>
+          <div class="status-row"><div class="label">Progress</div><div id="runProgress">0%</div></div>
+          <div class="status-row"><div class="label">Steps</div><div id="runSteps">0 / 0</div></div>
+          <div class="status-row"><div class="label">Speed</div><div id="runSpeed">-</div></div>
+          <div class="status-row"><div class="label">ETA</div><div id="runEta">-</div></div>
+          <div class="status-row"><div class="label">GPU</div><div id="runGpu">-</div></div>
+          <div class="status-row"><div class="label">Error</div><div id="runError">-</div></div>
+          <div class="status-row"><div class="label">Last update</div><div id="lastUpdate">-</div></div>
+          <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+          <div class="footer">Status auto-refreshes every 2 seconds while running.</div>
+        </section>
+
+        <section class="card">
+          <h2>Artifacts</h2>
+          <div class="actions">
+            <button id="downloadZipBtn">Download .zip</button>
+            <button id="downloadOnnxBtn">Download .onnx</button>
+          </div>
+          <pre id="artifactOutput">Train a model first, then download artifacts.</pre>
+        </section>
+
+        <section class="card">
+          <h2>Model Gallery</h2>
+          <div class="run-meta">Robot-related RL models with training metadata.</div>
+          <div id="runList" class="run-list"></div>
+          <div class="detail-panel" id="detailPanel">
+            <div class="run-title">Run Details</div>
+            <div id="detailMeta" class="run-meta">Select a run to see details.</div>
+            <canvas id="rewardChart" class="chart"></canvas>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>Live Environment</h2>
+          <div class="run-meta">Real-time simulation preview (20 fps)</div>
+          <div class="actions">
+            <button id="liveDemoBtn" class="primary">Demo Mode</button>
+            <button id="liveTrainingBtn">Training Mode</button>
+            <button id="liveStartBtn">Start</button>
+            <button id="liveStopBtn">Stop</button>
+            <button id="liveResetBtn">Reset</button>
+          </div>
+          <div class="actions">
+            <button id="liveForwardBtn">Forward</button>
+            <button id="liveLeftBtn">Left</button>
+            <button id="liveRightBtn">Right</button>
+            <button id="liveAutoBtn">Auto Run: On</button>
+          </div>
+          <canvas id="liveCanvas" class="live-canvas"></canvas>
+          <div id="liveStatus" class="run-meta">Idle.</div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      const systemOutput = document.getElementById("systemOutput");
+      const trainOutput = document.getElementById("trainOutput");
+      const artifactOutput = document.getElementById("artifactOutput");
+
+      const runIdEl = document.getElementById("runId");
+      const runStateEl = document.getElementById("runState");
+      const runProgressEl = document.getElementById("runProgress");
+      const runStepsEl = document.getElementById("runSteps");
+      const runErrorEl = document.getElementById("runError");
+      const lastUpdateEl = document.getElementById("lastUpdate");
+      const progressBar = document.getElementById("progressBar");
+      const runSpeedEl = document.getElementById("runSpeed");
+      const runEtaEl = document.getElementById("runEta");
+      const runGpuEl = document.getElementById("runGpu");
+      const runList = document.getElementById("runList");
+      const detailMeta = document.getElementById("detailMeta");
+      const rewardChart = document.getElementById("rewardChart");
+      const liveCanvas = document.getElementById("liveCanvas");
+      const liveStatus = document.getElementById("liveStatus");
+
+      let liveMode = "demo";
+      let liveRunning = false;
+      let liveAuto = true;
+      let liveInterval = null;
+
+      let statusPollingHandle = null;
+
+      function setStatus(status) {
+        runIdEl.textContent = status.run_id ?? "-";
+        const state = status.status ?? "idle";
+        runStateEl.textContent = state;
+        runStateEl.className = `badge ${state}`;
+        const progress = Math.round(((status.progress ?? 0) * 100) * 100) / 100;
+        runProgressEl.textContent = `${progress}%`;
+        progressBar.style.width = `${progress}%`;
+        runStepsEl.textContent = `${status.completed_steps ?? 0} / ${status.total_steps ?? 0}`;
+        const speed = status.steps_per_second ? `${status.steps_per_second.toFixed(2)} steps/s` : "-";
+        runSpeedEl.textContent = speed;
+        runEtaEl.textContent = status.eta_seconds ? `${Math.ceil(status.eta_seconds)} s` : "-";
+        if (status.gpu_info?.available) {
+          runGpuEl.textContent = `${status.gpu_info.name} (${status.gpu_info.memory_allocated_gb} / ${status.gpu_info.total_memory_gb} GB)`;
+        } else {
+          runGpuEl.textContent = "GPU not available";
+        }
+        runErrorEl.textContent = status.error_message || "-";
+        runErrorEl.className = status.error_message ? "error" : "";
+        lastUpdateEl.textContent = new Date().toLocaleTimeString();
+      }
+
+      async function apiFetch(url, options = {}) {
+        const response = await fetch(url, options);
+        const contentType = response.headers.get("content-type") || "";
+        const payload = contentType.includes("application/json")
+          ? await response.json()
+          : await response.text();
+
+        if (!response.ok) {
+          const detail = typeof payload === "object" && payload !== null ? payload.detail : payload;
+          throw new Error(String(detail || `HTTP ${response.status}`));
+        }
+
+        return payload;
+      }
+
+      async function refreshStatus() {
+        try {
+          const status = await apiFetch("/training-status");
+          setStatus(status);
+          trainOutput.textContent = JSON.stringify(status, null, 2);
+
+          if (status.status === "running") {
+            if (!statusPollingHandle) {
+              statusPollingHandle = setInterval(refreshStatus, 2000);
+            }
+          } else if (statusPollingHandle) {
+            clearInterval(statusPollingHandle);
+            statusPollingHandle = null;
+          }
+        } catch (error) {
+          trainOutput.textContent = `Status error: ${error.message}`;
+        }
+      }
+
+      function formatTimestamp(value) {
+        if (!value) return "-";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleString();
+      }
+
+      function renderRunList(runs) {
+        if (!Array.isArray(runs) || runs.length === 0) {
+          runList.innerHTML = "<div class=\"run-meta\">No runs yet.</div>";
+          return;
+        }
+
+        runList.innerHTML = runs
+          .map((run) => {
+            const title = run.model_label || "RobotMind RL Model";
+            const status = run.status || "unknown";
+            const algorithm = run.algorithm || "PPO";
+            const envName = run.environment || "RobotEnv";
+            const steps = `${run.timesteps_completed || 0} / ${run.steps || 0}`;
+            const started = formatTimestamp(run.started_at);
+            return `
+              <div class="run-item">
+                <div class="run-title">${title}</div>
+                <div class="run-meta">${algorithm} • ${envName} • ${status} • ${steps}</div>
+                <div class="run-meta">Started: ${started}</div>
+                <div class="run-actions">
+                  <button onclick="window.location.href='/download-model?format=zip&run_id=${run.id}'">Download ZIP</button>
+                  <button onclick="window.location.href='/download-model?format=onnx&run_id=${run.id}'">Download ONNX</button>
+                  <button onclick="loadRunDetails(${run.id})">View Details</button>
+                </div>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function drawChart(canvas, series) {
+        const ctx = canvas.getContext("2d");
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "#0b1220";
+        ctx.fillRect(0, 0, width, height);
+
+        if (!series.length) {
+          ctx.fillStyle = "#94a3b8";
+          ctx.fillText("No metrics available yet.", 12, 24);
+          return;
+        }
+
+        const maxY = Math.max(...series.map((point) => point.reward_mean ?? 0));
+        const minY = Math.min(...series.map((point) => point.reward_mean ?? 0));
+        const range = maxY - minY || 1;
+
+        ctx.strokeStyle = "#22c55e";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        series.forEach((point, index) => {
+          const x = (index / Math.max(series.length - 1, 1)) * (width - 24) + 12;
+          const y = height - 12 - ((point.reward_mean ?? 0) - minY) / range * (height - 24);
+          if (index === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        });
+        ctx.stroke();
+      }
+
+      async function loadRunDetails(runId) {
+        try {
+          const run = await apiFetch(`/training-runs/${runId}`);
+          const metrics = await apiFetch(`/training-runs/${runId}/metrics?limit=200`);
+          detailMeta.textContent = `${run.model_label || "RobotMind RL Model"} • ${run.algorithm || "PPO"} • ${run.environment || "RobotEnv"}`;
+          drawChart(rewardChart, metrics);
+        } catch (error) {
+          detailMeta.textContent = `Failed to load run details: ${error.message}`;
+          drawChart(rewardChart, []);
+        }
+      }
+
+      async function refreshRuns() {
+        try {
+          const runs = await apiFetch("/training-runs?limit=12");
+          renderRunList(runs);
+        } catch (error) {
+          runList.innerHTML = `<div class=\"run-meta\">Failed to load runs: ${error.message}</div>`;
+        }
+      }
+
+      function drawEnvironment(canvas, state) {
+        const ctx = canvas.getContext("2d");
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "#0b1220";
+        ctx.fillRect(0, 0, width, height);
+
+        if (!state) {
+          ctx.fillStyle = "#94a3b8";
+          ctx.fillText("No live state available.", 12, 24);
+          return;
+        }
+
+        const worldWidth = state.world_width || 640;
+        const worldHeight = state.world_height || 480;
+        const margin = state.wall_margin || 20;
+        const scale = Math.min(width / worldWidth, height / worldHeight);
+        const offsetX = (width - worldWidth * scale) / 2;
+        const offsetY = (height - worldHeight * scale) / 2;
+
+        const toCanvas = (x, y) => [offsetX + x * scale, offsetY + y * scale];
+
+        ctx.strokeStyle = "#334155";
+        ctx.lineWidth = 2;
+        const [wallX, wallY] = toCanvas(margin, margin);
+        ctx.strokeRect(
+          wallX,
+          wallY,
+          (worldWidth - margin * 2) * scale,
+          (worldHeight - margin * 2) * scale
+        );
+
+        const rays = state.rays || [];
+        const rayCount = state.ray_count || rays.length;
+        const rayLength = state.ray_length || 140;
+        const fov = state.ray_fov_degrees || 120;
+        const angleStart = (state.angle || 0) - fov / 2;
+        const angleStep = rayCount > 1 ? fov / (rayCount - 1) : 0;
+
+        const [robotX, robotY] = toCanvas(state.x || 0, state.y || 0);
+        rays.forEach((distance, index) => {
+          const angle = (angleStart + angleStep * index) * (Math.PI / 180);
+          const length = rayLength * (distance ?? 1);
+          const endX = (state.x || 0) + Math.cos(angle) * length;
+          const endY = (state.y || 0) + Math.sin(angle) * length;
+          const [rayX, rayY] = toCanvas(endX, endY);
+          ctx.strokeStyle = "rgba(56, 189, 248, 0.6)";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(robotX, robotY);
+          ctx.lineTo(rayX, rayY);
+          ctx.stroke();
+        });
+
+        ctx.fillStyle = state.collision ? "#ef4444" : "#22c55e";
+        ctx.beginPath();
+        ctx.arc(robotX, robotY, (state.robot_radius || 15) * scale, 0, Math.PI * 2);
+        ctx.fill();
+
+        const heading = (state.angle || 0) * (Math.PI / 180);
+        const headX = (state.x || 0) + Math.cos(heading) * (state.robot_radius || 15) * 1.6;
+        const headY = (state.y || 0) + Math.sin(heading) * (state.robot_radius || 15) * 1.6;
+        const [headCanvasX, headCanvasY] = toCanvas(headX, headY);
+        ctx.strokeStyle = "#e2e8f0";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(robotX, robotY);
+        ctx.lineTo(headCanvasX, headCanvasY);
+        ctx.stroke();
+      }
+
+      async function liveTick() {
+        try {
+          if (liveMode === "demo") {
+            if (liveAuto) {
+              await apiFetch("/environment/live-step?action=0", { method: "POST" });
+            }
+            const state = await apiFetch("/environment/live-state");
+            drawEnvironment(liveCanvas, state);
+            liveStatus.textContent = `Demo mode • reward ${state.reward}`;
+          } else {
+            const status = await apiFetch("/training-status");
+            drawEnvironment(liveCanvas, status.training_env_state || null);
+            if (status.training_env_state) {
+              liveStatus.textContent = `Training mode • step ${status.completed_steps || 0}`;
+            } else {
+              liveStatus.textContent = "Training mode • no live state yet.";
+            }
+          }
+        } catch (error) {
+          liveStatus.textContent = `Live error: ${error.message}`;
+        }
+      }
+
+      function startLive() {
+        if (liveInterval) return;
+        liveRunning = true;
+        liveInterval = setInterval(liveTick, 50);
+      }
+
+      function stopLive() {
+        liveRunning = false;
+        if (liveInterval) {
+          clearInterval(liveInterval);
+          liveInterval = null;
+        }
+      }
+
+      document.getElementById("healthBtn").addEventListener("click", async () => {
+        try {
+          const health = await apiFetch("/health");
+          systemOutput.textContent = JSON.stringify(health, null, 2);
+          systemOutput.className = "ok";
+        } catch (error) {
+          systemOutput.textContent = `Health check failed: ${error.message}`;
+          systemOutput.className = "error";
+        }
+      });
+
+      document.getElementById("envBtn").addEventListener("click", async () => {
+        try {
+          const result = await apiFetch("/environment/create", { method: "POST" });
+          systemOutput.textContent = JSON.stringify(result, null, 2);
+          systemOutput.className = "";
+        } catch (error) {
+          systemOutput.textContent = `Create environment failed: ${error.message}`;
+          systemOutput.className = "error";
+        }
+      });
+
+      document.getElementById("startBtn").addEventListener("click", async () => {
+        const steps = Number(document.getElementById("stepsInput").value || 5000);
+        try {
+          const result = await apiFetch("/start-training", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ steps }),
+          });
+          trainOutput.textContent = JSON.stringify(result, null, 2);
+          setStatus(result);
+          refreshStatus();
+          refreshRuns();
+        } catch (error) {
+          trainOutput.textContent = `Start training failed: ${error.message}`;
+        }
+      });
+
+      document.getElementById("statusBtn").addEventListener("click", refreshStatus);
+
+      document.getElementById("downloadZipBtn").addEventListener("click", () => {
+        window.location.href = "/download-model?format=zip";
+        artifactOutput.textContent = "Downloading ZIP model...";
+      });
+
+      document.getElementById("downloadOnnxBtn").addEventListener("click", () => {
+        window.location.href = "/download-model?format=onnx";
+        artifactOutput.textContent = "Downloading ONNX model...";
+      });
+
+      document.getElementById("liveDemoBtn").addEventListener("click", () => {
+        liveMode = "demo";
+        document.getElementById("liveDemoBtn").classList.add("primary");
+        document.getElementById("liveTrainingBtn").classList.remove("primary");
+        liveStatus.textContent = "Demo mode selected.";
+      });
+
+      document.getElementById("liveTrainingBtn").addEventListener("click", () => {
+        liveMode = "training";
+        document.getElementById("liveTrainingBtn").classList.add("primary");
+        document.getElementById("liveDemoBtn").classList.remove("primary");
+        liveStatus.textContent = "Training mode selected.";
+      });
+
+      document.getElementById("liveStartBtn").addEventListener("click", () => {
+        startLive();
+      });
+
+      document.getElementById("liveStopBtn").addEventListener("click", () => {
+        stopLive();
+      });
+
+      document.getElementById("liveResetBtn").addEventListener("click", async () => {
+        await apiFetch("/environment/live-reset", { method: "POST" });
+        liveStatus.textContent = "Live environment reset.";
+      });
+
+      document.getElementById("liveForwardBtn").addEventListener("click", async () => {
+        await apiFetch("/environment/live-step?action=0", { method: "POST" });
+      });
+
+      document.getElementById("liveLeftBtn").addEventListener("click", async () => {
+        await apiFetch("/environment/live-step?action=1", { method: "POST" });
+      });
+
+      document.getElementById("liveRightBtn").addEventListener("click", async () => {
+        await apiFetch("/environment/live-step?action=2", { method: "POST" });
+      });
+
+      document.getElementById("liveAutoBtn").addEventListener("click", () => {
+        liveAuto = !liveAuto;
+        document.getElementById("liveAutoBtn").textContent = `Auto Run: ${liveAuto ? "On" : "Off"}`;
+      });
+
+      refreshStatus();
+      refreshRuns();
+      drawEnvironment(liveCanvas, null);
+    </script>
+  </body>
+</html>

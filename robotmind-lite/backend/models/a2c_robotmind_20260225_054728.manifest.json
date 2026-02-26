@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-02-25T05:47:28.770551",
+  "model_artifacts": {
+    "sb3_zip": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\a2c_robotmind_20260225_054728.zip",
+    "onnx": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\a2c_robotmind_20260225_054728.onnx"
+  },
+  "metadata": {
+    "algorithm": "A2C",
+    "control_mode": "discrete",
+    "environment_profile": "corridor_sprint",
+    "environment_label": "Corridor Sprint",
+    "model_profile": "balanced",
+    "model_profile_label": "Balanced",
+    "algorithm_params": {},
+    "observation_dim": 17
+  },
+  "validation": {
+    "sb3_runtime": {
+      "ok": true,
+      "action_shape": [
+        1
+      ],
+      "observation_dim": 17
+    },
+    "onnx_runtime": {
+      "ok": true,
+      "input_name": "observation",
+      "output_shapes": [
+        [
+          1
+        ]
+      ],
+      "observation_dim": 17
+    }
+  }
+}

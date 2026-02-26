@@ -1,0 +1,1 @@
+"""RobotMind Lite backend package."""

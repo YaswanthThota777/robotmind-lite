@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-02-25T07:28:45.359867",
+  "model_artifacts": {
+    "sb3_zip": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\ppo_robotmind_20260225_072843.zip",
+    "onnx": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\ppo_robotmind_20260225_072843.onnx"
+  },
+  "metadata": {
+    "algorithm": "PPO",
+    "control_mode": "discrete",
+    "environment_profile": "flat_ground_rover_v1",
+    "environment_label": "Flat Ground Rover (V1)",
+    "model_profile": "balanced",
+    "model_profile_label": "Balanced",
+    "algorithm_params": {},
+    "observation_dim": 17
+  },
+  "validation": {
+    "sb3_runtime": {
+      "ok": true,
+      "action_shape": [
+        1
+      ],
+      "observation_dim": 17
+    },
+    "onnx_runtime": {
+      "ok": true,
+      "input_name": "observation",
+      "output_shapes": [
+        [
+          1
+        ]
+      ],
+      "observation_dim": 17
+    }
+  }
+}

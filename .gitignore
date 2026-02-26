@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Trained model binaries (large artifacts — keep manifests)
+*.onnx
+*.zip
+*.pt
+*.pth
+*.pkl
+*.h5
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Logs & temp
+*.log
+*.tmp
+logs/
+
+# IDE
+.vscode/settings.json
+.idea/
+*.suo
+*.sln.docstates
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env files (may contain secrets)
+.env
+.env.*
+
+# DB
+*.db
+*.sqlite
+*.sqlite3
+
+# Jupyter checkpoints
+.ipynb_checkpoints/

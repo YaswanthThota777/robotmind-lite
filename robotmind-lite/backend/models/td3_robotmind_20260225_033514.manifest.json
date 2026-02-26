@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-02-25T03:35:16.362728",
+  "model_artifacts": {
+    "sb3_zip": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\td3_robotmind_20260225_033514.zip",
+    "onnx": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\td3_robotmind_20260225_033514.onnx"
+  },
+  "metadata": {
+    "algorithm": "TD3",
+    "control_mode": "continuous",
+    "environment_profile": "custom_env_drone_flight_indoor",
+    "environment_label": "Custom drone_flight_indoor",
+    "model_profile": "deep",
+    "model_profile_label": "Deep",
+    "algorithm_params": {
+      "gamma": 0.99,
+      "learning_starts": 800,
+      "buffer_size": 250000
+    },
+    "observation_dim": 25
+  },
+  "validation": {
+    "sb3_runtime": {
+      "ok": true,
+      "action_shape": [
+        1,
+        2
+      ],
+      "observation_dim": 25
+    },
+    "onnx_runtime": {
+      "ok": true,
+      "input_name": "observation",
+      "output_shapes": [
+        [
+          1,
+          2
+        ]
+      ],
+      "observation_dim": 25
+    }
+  }
+}
