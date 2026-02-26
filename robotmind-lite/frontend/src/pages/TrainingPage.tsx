@@ -65,9 +65,23 @@ export const TrainingPage = ({
     { key: "DDPG", label: "DDPG", description: "Deep Deterministic Policy Gradient" },
   ]);
   const [environmentProfiles, setEnvironmentProfiles] = useState<ProfileOption[]>([
-    { key: "flat_ground_differential_v1", label: "Flat Ground Differential", description: "" },
-    { key: "flat_ground_ackermann_v1",    label: "Flat Ground Ackermann",    description: "" },
-    { key: "flat_ground_rover_v1",        label: "Flat Ground Rover",        description: "" },
+    { key: "flat_ground_differential_v1",  label: "Flat Ground Differential",    description: "" },
+    { key: "flat_ground_ackermann_v1",     label: "Flat Ground Ackermann",       description: "" },
+    { key: "flat_ground_rover_v1",         label: "Flat Ground Rover",           description: "" },
+    { key: "arena_basic",                  label: "Arena Basic",                 description: "" },
+    { key: "warehouse_dense",              label: "Warehouse Dense",             description: "" },
+    { key: "corridor_sprint",              label: "Narrow Corridors",            description: "" },
+    { key: "autonomous_driving_city",      label: "City Streets",                description: "" },
+    { key: "legged_robot_terrain",         label: "Rough Terrain",               description: "" },
+    { key: "drone_flight_indoor",          label: "Indoor Drone",                description: "" },
+    { key: "humanoid_balance_lab",         label: "Humanoid Balance Lab",        description: "" },
+    { key: "software_anomaly_graph",       label: "Anomaly Graph",               description: "" },
+    { key: "goal_chase",                   label: "Goal Chase",                  description: "" },
+    { key: "apple_field",                  label: "Apple Field",                 description: "" },
+    { key: "flat_ground_cluttered_v2",     label: "Cluttered Room",              description: "" },
+    { key: "flat_ground_multi_room",       label: "Multi-Room Navigation",       description: "" },
+    { key: "flat_ground_stress_test",      label: "Stress Test",                 description: "" },
+    { key: "flat_ground_dead_end_recovery",label: "Dead-End Recovery",           description: "" },
   ]);
   const [modelProfiles, setModelProfiles] = useState<ProfileOption[]>([
     { key: "fast",     label: "Fast",     description: "Small network" },
@@ -315,7 +329,7 @@ export const TrainingPage = ({
   const selectedEnvProfile = environmentProfiles.find(e => e.key === trainingConfig.environmentProfile);
   const envHasGoal = selectedEnvProfile?.world_summary?.has_goal ?? false;
   const isContinuousAlgo = ["SAC", "TD3", "DDPG"].includes(trainingConfig.algorithm);
-  const isComplexEnv = ["warehouse_dense", "narrow_corridor", "maze", "city", "goal_chase", "drone", "legged", "apple_field"]
+  const isComplexEnv = ["warehouse_dense", "narrow_corridor", "corridor_sprint", "maze", "city", "goal_chase", "drone", "legged", "apple_field", "cluttered", "multi_room", "stress_test", "dead_end", "humanoid", "anomaly"]
     .some(k => trainingConfig.environmentProfile.toLowerCase().includes(k));
   // deep for goal/complex envs or continuous algos; fast for simple discrete training
   const suggestedModelKey = (envHasGoal || isComplexEnv) ? "deep" : isContinuousAlgo ? "balanced" : "balanced";

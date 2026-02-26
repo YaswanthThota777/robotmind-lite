@@ -830,9 +830,9 @@ export const SimulationCanvas = ({
         )}
 
         {isTrainingActive && (
-          <div className="absolute top-0 left-0 right-0 z-10">
-            {/* Professional Training Header */}
-            <div className="bg-gradient-to-b from-slate-900/95 via-slate-900/90 to-transparent backdrop-blur-md border-b border-slate-700/50">
+          <div className="-mx-4 -mt-4 mb-3 rounded-t-2xl overflow-hidden">
+            {/* Training Header — in normal flow so it pushes canvas down (no overlay) */}
+            <div className="bg-gradient-to-b from-slate-900 to-slate-900/95 backdrop-blur-md border-b border-slate-700/50">
               <div className="px-4 py-3">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
