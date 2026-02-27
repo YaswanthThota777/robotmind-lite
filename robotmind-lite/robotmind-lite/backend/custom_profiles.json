@@ -1,4 +1,4 @@
-{
+﻿{
   "environment_profiles": {
     "user_maze_x1": {
       "label": "User Maze X1",
@@ -486,7 +486,8 @@
         "domain": "flat-ground",
         "flat_ground_model": "differential",
         "version": "v1",
-        "training_scenarios": "office, warehouse, corridor, doorway, cluttered"
+        "training_scenarios": "office, warehouse, corridor, doorway, cluttered",
+        "robot_shape": "circle"
       },
       "world": {
         "width": 720,
@@ -544,9 +545,9 @@
         ]
       },
       "sensor": {
-        "ray_count": 3,
-        "ray_length": 190,
-        "ray_fov_degrees": 90
+        "ray_count": 8,
+        "ray_length": 140,
+        "ray_fov_degrees": 120
       },
       "dynamics": {
         "sensor_noise_std": 0.015,
@@ -571,7 +572,7 @@
         "obstacle": "#334155",
         "robot": "#22c55e",
         "robot_collision": "#ef4444",
-        "ray": "rgba(56, 189, 248, 0.45)"
+        "ray": "#22c55e80"
       }
     },
     "custom_env_flat_ground_differential_v1": {
@@ -927,7 +928,8 @@
           "discrete",
           "continuous"
         ],
-        "flat_ground_model": "differential"
+        "flat_ground_model": "differential",
+        "robot_shape": "circle"
       },
       "world": {
         "width": 620.0,
@@ -966,9 +968,9 @@
         }
       },
       "sensor": {
-        "ray_count": 3,
-        "ray_length": 190,
-        "ray_fov_degrees": 90
+        "ray_count": 8,
+        "ray_length": 140,
+        "ray_fov_degrees": 120
       },
       "dynamics": {
         "sensor_noise_std": 0.01,
@@ -976,7 +978,6 @@
         "speed_noise_std": 0.02,
         "turn_noise_std": 0.3,
         "randomize_spawn": true,
-        "randomize_goal": true,
         "speed_scale_min": 0.95,
         "speed_scale_max": 1.05,
         "turn_scale_min": 0.95,
@@ -994,7 +995,7 @@
         "obstacle": "#1f2937",
         "robot": "#22c55e",
         "robot_collision": "#ef4444",
-        "ray": "rgba(56,189,248,0.45)",
+        "ray": "#22c55e80",
         "goal": "#ef4444"
       }
     },
@@ -1445,7 +1446,8 @@
           "discrete",
           "continuous"
         ],
-        "flat_ground_model": "differential"
+        "flat_ground_model": "differential",
+        "robot_shape": "circle"
       },
       "world": {
         "width": 620.0,
@@ -1484,9 +1486,9 @@
         }
       },
       "sensor": {
-        "ray_count": 3,
-        "ray_length": 190,
-        "ray_fov_degrees": 90
+        "ray_count": 8,
+        "ray_length": 140,
+        "ray_fov_degrees": 120
       },
       "dynamics": {
         "sensor_noise_std": 0.01,
@@ -1494,7 +1496,6 @@
         "speed_noise_std": 0.02,
         "turn_noise_std": 0.3,
         "randomize_spawn": true,
-        "randomize_goal": true,
         "speed_scale_min": 0.95,
         "speed_scale_max": 1.05,
         "turn_scale_min": 0.95,
@@ -1512,7 +1513,7 @@
         "obstacle": "#1f2937",
         "robot": "#22c55e",
         "robot_collision": "#ef4444",
-        "ray": "rgba(56,189,248,0.45)",
+        "ray": "#22c55e80",
         "goal": "#ef4444"
       }
     },
@@ -2463,629 +2464,6 @@
         "robot": "#22c55e",
         "robot_collision": "#ef4444",
         "ray": "#22c55e80",
-        "goal": "#ef4444"
-      }
-    },
-    "custom_live_autonomous_driving_city": {
-      "label": "Custom Live autonomous_driving_city",
-      "description": "User-provided custom live environment",
-      "metadata": {
-        "supported_control_modes": [
-          "continuous"
-        ],
-        "domain": "autonomous-driving",
-        "flat_ground_model": "differential",
-        "robot_shape": "circle"
-      },
-      "world": {
-        "width": 960,
-        "height": 560,
-        "wall_margin": 24.0,
-        "obstacles": [
-          {
-            "x": 160.0,
-            "y": 110.0,
-            "width": 620.0,
-            "height": 40.0
-          },
-          {
-            "x": 160.0,
-            "y": 390.0,
-            "width": 620.0,
-            "height": 40.0
-          },
-          {
-            "x": 160.0,
-            "y": 150.0,
-            "width": 40.0,
-            "height": 240.0
-          },
-          {
-            "x": 740.0,
-            "y": 150.0,
-            "width": 40.0,
-            "height": 240.0
-          },
-          {
-            "x": 420.0,
-            "y": 240.0,
-            "width": 120.0,
-            "height": 80.0
-          }
-        ]
-      },
-      "sensor": {
-        "ray_count": 8,
-        "ray_length": 140,
-        "ray_fov_degrees": 120
-      },
-      "dynamics": {
-        "sensor_noise_std": 0.02,
-        "heading_drift_std": 0.7,
-        "speed_noise_std": 0.06,
-        "turn_noise_std": 0.6,
-        "randomize_spawn": true,
-        "speed_scale_min": 0.8,
-        "speed_scale_max": 1.2,
-        "turn_scale_min": 0.8,
-        "turn_scale_max": 1.2
-      },
-      "robot": {
-        "radius": 15,
-        "speed": 130,
-        "turn_rate_degrees": 12
-      },
-      "visual": {
-        "bg": "#0b1020",
-        "wall": "#94a3b8",
-        "obstacle": "#334155",
-        "robot": "#64748b",
-        "robot_collision": "#ef4444",
-        "ray": "#64748b80"
-      }
-    },
-    "custom_test_goal_chase_96_173537": {
-      "label": "Test goal_chase",
-      "description": "User-provided test environment",
-      "metadata": {
-        "supported_control_modes": [
-          "discrete",
-          "continuous"
-        ],
-        "flat_ground_model": "differential",
-        "robot_shape": "circle"
-      },
-      "world": {
-        "width": 620.0,
-        "height": 480.0,
-        "wall_margin": 22.0,
-        "obstacles": [
-          {
-            "x": 150.0,
-            "y": 100.0,
-            "width": 80.0,
-            "height": 30.0
-          },
-          {
-            "x": 350.0,
-            "y": 180.0,
-            "width": 30.0,
-            "height": 130.0
-          },
-          {
-            "x": 200.0,
-            "y": 330.0,
-            "width": 130.0,
-            "height": 30.0
-          },
-          {
-            "x": 420.0,
-            "y": 80.0,
-            "width": 60.0,
-            "height": 60.0
-          }
-        ],
-        "goal": {
-          "x": 520.0,
-          "y": 380.0,
-          "radius": 20.0
-        }
-      },
-      "sensor": {
-        "ray_count": 8,
-        "ray_length": 140,
-        "ray_fov_degrees": 120
-      },
-      "dynamics": {
-        "sensor_noise_std": 0.01,
-        "heading_drift_std": 0.3,
-        "speed_noise_std": 0.02,
-        "turn_noise_std": 0.3,
-        "randomize_spawn": true,
-        "randomize_goal": false,
-        "speed_scale_min": 0.95,
-        "speed_scale_max": 1.05,
-        "turn_scale_min": 0.95,
-        "turn_scale_max": 1.05,
-        "max_steps": 800
-      },
-      "robot": {
-        "radius": 15,
-        "speed": 130,
-        "turn_rate_degrees": 12
-      },
-      "visual": {
-        "bg": "#0f172a",
-        "wall": "#334155",
-        "obstacle": "#1f2937",
-        "robot": "#ec4899",
-        "robot_collision": "#ef4444",
-        "ray": "#ec489980",
-        "goal": "#ef4444"
-      }
-    },
-    "custom_test_goal_chase_96_173638": {
-      "label": "Test goal_chase",
-      "description": "User-provided test environment",
-      "metadata": {
-        "supported_control_modes": [
-          "discrete",
-          "continuous"
-        ],
-        "flat_ground_model": "differential"
-      },
-      "world": {
-        "width": 640,
-        "height": 480,
-        "wall_margin": 20,
-        "obstacles": [
-          {
-            "x": 82,
-            "y": 154,
-            "width": 30,
-            "height": 167
-          },
-          {
-            "x": 348,
-            "y": 274,
-            "width": 108,
-            "height": 44
-          },
-          {
-            "x": 229,
-            "y": 130,
-            "width": 152,
-            "height": 28
-          }
-        ],
-        "goal": {
-          "x": 94,
-          "y": 72,
-          "radius": 18
-        }
-      },
-      "sensor": {
-        "ray_count": 12,
-        "ray_length": 180.0,
-        "ray_fov_degrees": 240.0
-      },
-      "dynamics": {
-        "sensor_noise_std": 0.01,
-        "heading_drift_std": 0.3,
-        "speed_noise_std": 0.02,
-        "turn_noise_std": 0.3,
-        "randomize_spawn": true,
-        "randomize_goal": false,
-        "speed_scale_min": 0.95,
-        "speed_scale_max": 1.05,
-        "turn_scale_min": 0.95,
-        "turn_scale_max": 1.05,
-        "max_steps": 800
-      },
-      "robot": {
-        "radius": 13.0,
-        "speed": 130.0,
-        "turn_rate_degrees": 11.0
-      },
-      "visual": {
-        "bg": "#0f172a",
-        "wall": "#334155",
-        "obstacle": "#1f2937",
-        "robot": "#22c55e",
-        "robot_collision": "#ef4444",
-        "ray": "rgba(56,189,248,0.45)",
-        "goal": "#f59e0b"
-      }
-    },
-    "finetune_goal_chase_96_173809": {
-      "label": "FineTune goal_chase",
-      "description": "Fine-tune environment override",
-      "metadata": {
-        "supported_control_modes": [
-          "discrete",
-          "continuous"
-        ],
-        "flat_ground_model": "differential"
-      },
-      "world": {
-        "width": 640,
-        "height": 480,
-        "wall_margin": 20,
-        "obstacles": [
-          {
-            "x": 82,
-            "y": 154,
-            "width": 30,
-            "height": 167
-          },
-          {
-            "x": 348,
-            "y": 274,
-            "width": 108,
-            "height": 44
-          },
-          {
-            "x": 229,
-            "y": 130,
-            "width": 152,
-            "height": 28
-          }
-        ],
-        "goal": {
-          "x": 94,
-          "y": 72,
-          "radius": 18
-        }
-      },
-      "sensor": {
-        "ray_count": 12,
-        "ray_length": 180.0,
-        "ray_fov_degrees": 240.0
-      },
-      "dynamics": {
-        "sensor_noise_std": 0.01,
-        "heading_drift_std": 0.3,
-        "speed_noise_std": 0.02,
-        "turn_noise_std": 0.3,
-        "randomize_spawn": true,
-        "randomize_goal": true,
-        "speed_scale_min": 0.95,
-        "speed_scale_max": 1.05,
-        "turn_scale_min": 0.95,
-        "turn_scale_max": 1.05,
-        "max_steps": 800
-      },
-      "robot": {
-        "radius": 13.0,
-        "speed": 130.0,
-        "turn_rate_degrees": 11.0
-      },
-      "visual": {
-        "bg": "#0f172a",
-        "wall": "#334155",
-        "obstacle": "#1f2937",
-        "robot": "#22c55e",
-        "robot_collision": "#ef4444",
-        "ray": "rgba(56,189,248,0.45)",
-        "goal": "#f59e0b"
-      }
-    },
-    "custom_test_goal_chase_97_035423": {
-      "label": "Test goal_chase",
-      "description": "User-provided test environment",
-      "metadata": {
-        "supported_control_modes": [
-          "discrete",
-          "continuous"
-        ],
-        "flat_ground_model": "differential",
-        "robot_shape": "circle"
-      },
-      "world": {
-        "width": 620.0,
-        "height": 480.0,
-        "wall_margin": 22.0,
-        "obstacles": [
-          {
-            "x": 150.0,
-            "y": 100.0,
-            "width": 80.0,
-            "height": 30.0
-          },
-          {
-            "x": 350.0,
-            "y": 180.0,
-            "width": 30.0,
-            "height": 130.0
-          },
-          {
-            "x": 200.0,
-            "y": 330.0,
-            "width": 130.0,
-            "height": 30.0
-          },
-          {
-            "x": 420.0,
-            "y": 80.0,
-            "width": 60.0,
-            "height": 60.0
-          }
-        ],
-        "goal": {
-          "x": 520.0,
-          "y": 380.0,
-          "radius": 20.0
-        }
-      },
-      "sensor": {
-        "ray_count": 8,
-        "ray_length": 140,
-        "ray_fov_degrees": 120
-      },
-      "dynamics": {
-        "sensor_noise_std": 0.01,
-        "heading_drift_std": 0.3,
-        "speed_noise_std": 0.02,
-        "turn_noise_std": 0.3,
-        "randomize_spawn": true,
-        "randomize_goal": false,
-        "speed_scale_min": 0.95,
-        "speed_scale_max": 1.05,
-        "turn_scale_min": 0.95,
-        "turn_scale_max": 1.05,
-        "max_steps": 800
-      },
-      "robot": {
-        "radius": 15,
-        "speed": 130,
-        "turn_rate_degrees": 12
-      },
-      "visual": {
-        "bg": "#0f172a",
-        "wall": "#334155",
-        "obstacle": "#1f2937",
-        "robot": "#ec4899",
-        "robot_collision": "#ef4444",
-        "ray": "#ec489980",
-        "goal": "#ef4444"
-      }
-    },
-    "finetune_goal_chase_97_035437": {
-      "label": "FineTune goal_chase",
-      "description": "Fine-tune environment override",
-      "metadata": {
-        "supported_control_modes": [
-          "discrete",
-          "continuous"
-        ],
-        "flat_ground_model": "differential",
-        "robot_shape": "circle"
-      },
-      "world": {
-        "width": 620.0,
-        "height": 480.0,
-        "wall_margin": 22.0,
-        "obstacles": [
-          {
-            "x": 150.0,
-            "y": 100.0,
-            "width": 80.0,
-            "height": 30.0
-          },
-          {
-            "x": 350.0,
-            "y": 180.0,
-            "width": 30.0,
-            "height": 130.0
-          },
-          {
-            "x": 200.0,
-            "y": 330.0,
-            "width": 130.0,
-            "height": 30.0
-          },
-          {
-            "x": 420.0,
-            "y": 80.0,
-            "width": 60.0,
-            "height": 60.0
-          }
-        ],
-        "goal": {
-          "x": 520.0,
-          "y": 380.0,
-          "radius": 20.0
-        }
-      },
-      "sensor": {
-        "ray_count": 8,
-        "ray_length": 140,
-        "ray_fov_degrees": 120
-      },
-      "dynamics": {
-        "sensor_noise_std": 0.01,
-        "heading_drift_std": 0.3,
-        "speed_noise_std": 0.02,
-        "turn_noise_std": 0.3,
-        "randomize_spawn": true,
-        "randomize_goal": true,
-        "speed_scale_min": 0.95,
-        "speed_scale_max": 1.05,
-        "turn_scale_min": 0.95,
-        "turn_scale_max": 1.05,
-        "max_steps": 800
-      },
-      "robot": {
-        "radius": 15,
-        "speed": 130,
-        "turn_rate_degrees": 12
-      },
-      "visual": {
-        "bg": "#0f172a",
-        "wall": "#334155",
-        "obstacle": "#1f2937",
-        "robot": "#ec4899",
-        "robot_collision": "#ef4444",
-        "ray": "#ec489980",
-        "goal": "#ef4444"
-      }
-    },
-    "custom_test_goal_chase_97_040845": {
-      "label": "Test goal_chase",
-      "description": "User-provided test environment",
-      "metadata": {
-        "supported_control_modes": [
-          "discrete",
-          "continuous"
-        ],
-        "flat_ground_model": "differential",
-        "robot_shape": "circle"
-      },
-      "world": {
-        "width": 620.0,
-        "height": 480.0,
-        "wall_margin": 22.0,
-        "obstacles": [
-          {
-            "x": 150.0,
-            "y": 100.0,
-            "width": 80.0,
-            "height": 30.0
-          },
-          {
-            "x": 350.0,
-            "y": 180.0,
-            "width": 30.0,
-            "height": 130.0
-          },
-          {
-            "x": 200.0,
-            "y": 330.0,
-            "width": 130.0,
-            "height": 30.0
-          },
-          {
-            "x": 420.0,
-            "y": 80.0,
-            "width": 60.0,
-            "height": 60.0
-          }
-        ],
-        "goal": {
-          "x": 520.0,
-          "y": 380.0,
-          "radius": 20.0
-        }
-      },
-      "sensor": {
-        "ray_count": 8,
-        "ray_length": 140,
-        "ray_fov_degrees": 120
-      },
-      "dynamics": {
-        "sensor_noise_std": 0.01,
-        "heading_drift_std": 0.3,
-        "speed_noise_std": 0.02,
-        "turn_noise_std": 0.3,
-        "randomize_spawn": true,
-        "randomize_goal": false,
-        "speed_scale_min": 0.95,
-        "speed_scale_max": 1.05,
-        "turn_scale_min": 0.95,
-        "turn_scale_max": 1.05,
-        "max_steps": 800
-      },
-      "robot": {
-        "radius": 15,
-        "speed": 130,
-        "turn_rate_degrees": 12
-      },
-      "visual": {
-        "bg": "#0f172a",
-        "wall": "#334155",
-        "obstacle": "#1f2937",
-        "robot": "#ec4899",
-        "robot_collision": "#ef4444",
-        "ray": "#ec489980",
-        "goal": "#ef4444"
-      }
-    },
-    "custom_test_goal_chase_98_043350": {
-      "label": "Test goal_chase",
-      "description": "User-provided test environment",
-      "metadata": {
-        "supported_control_modes": [
-          "discrete",
-          "continuous"
-        ],
-        "flat_ground_model": "differential"
-      },
-      "world": {
-        "width": 620.0,
-        "height": 480.0,
-        "wall_margin": 22.0,
-        "obstacles": [
-          {
-            "x": 150.0,
-            "y": 100.0,
-            "width": 80.0,
-            "height": 30.0
-          },
-          {
-            "x": 350.0,
-            "y": 180.0,
-            "width": 30.0,
-            "height": 130.0
-          },
-          {
-            "x": 200.0,
-            "y": 330.0,
-            "width": 130.0,
-            "height": 30.0
-          },
-          {
-            "x": 420.0,
-            "y": 80.0,
-            "width": 60.0,
-            "height": 60.0
-          }
-        ],
-        "goal": {
-          "x": 520.0,
-          "y": 380.0,
-          "radius": 20.0
-        }
-      },
-      "sensor": {
-        "ray_count": 3,
-        "ray_length": 190,
-        "ray_fov_degrees": 90
-      },
-      "dynamics": {
-        "sensor_noise_std": 0.01,
-        "heading_drift_std": 0.3,
-        "speed_noise_std": 0.02,
-        "turn_noise_std": 0.3,
-        "randomize_spawn": true,
-        "randomize_goal": false,
-        "speed_scale_min": 0.95,
-        "speed_scale_max": 1.05,
-        "turn_scale_min": 0.95,
-        "turn_scale_max": 1.05,
-        "max_steps": 800
-      },
-      "robot": {
-        "radius": 15,
-        "speed": 130,
-        "turn_rate_degrees": 12
-      },
-      "visual": {
-        "bg": "#0f172a",
-        "wall": "#334155",
-        "obstacle": "#1f2937",
-        "robot": "#22c55e",
-        "robot_collision": "#ef4444",
-        "ray": "rgba(56,189,248,0.45)",
         "goal": "#ef4444"
       }
     }

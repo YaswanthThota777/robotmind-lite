@@ -189,17 +189,17 @@ export const EnvTemplates = ({
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="w-[92vw] max-w-5xl max-h-[90vh] flex flex-col
-                      bg-night-900 border border-night-700 rounded-2xl shadow-2xl overflow-hidden">
+                      bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-night-700 bg-night-800/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/80">
           <div>
             <div className="font-bold text-slate-100 text-base">Choose Environment</div>
             <div className="text-xs text-slate-400 mt-0.5">Built-in presets, procedural mazes, goal environments</div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-night-700 hover:bg-night-600 text-slate-300 text-sm flex items-center justify-center"
+            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm flex items-center justify-center"
           >✕</button>
         </div>
 
@@ -211,8 +211,8 @@ export const EnvTemplates = ({
               onClick={() => setTab(t.key)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 tab === t.key
-                  ? "bg-cyan-500/20 border border-cyan-500/50 text-cyan-300"
-                  : "bg-night-800 border border-night-700 text-slate-400 hover:text-slate-200"
+                  ? "bg-teal-500/20 border border-teal-500/50 text-teal-300"
+                  : "bg-slate-900/70 border border-slate-800 text-slate-400 hover:text-slate-200"
               }`}
             >
               {t.emoji} {t.label}
@@ -221,8 +221,8 @@ export const EnvTemplates = ({
           <div className="flex-1" />
           <button
             onClick={onCustomBuild}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-purple-500/20 border
-                       border-purple-500/50 text-purple-300 hover:bg-purple-500/30 transition-all"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-amber-500/20 border
+                       border-amber-500/50 text-amber-300 hover:bg-amber-500/30 transition-all"
           >
             🛠️ Build Custom
           </button>
@@ -245,7 +245,7 @@ export const EnvTemplates = ({
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
                   <label className="block text-xs text-slate-400 mb-1">
-                    Rows <span className="text-cyan-300 font-mono">{mazeRows}</span>
+                    Rows <span className="text-teal-300 font-mono">{mazeRows}</span>
                   </label>
                   <input type="range" min={2} max={20} value={mazeRows}
                     onChange={(e) => setMazeRows(Number(e.target.value))}
@@ -253,7 +253,7 @@ export const EnvTemplates = ({
                 </div>
                 <div>
                   <label className="block text-xs text-slate-400 mb-1">
-                    Cols <span className="text-cyan-300 font-mono">{mazeCols}</span>
+                    Cols <span className="text-teal-300 font-mono">{mazeCols}</span>
                   </label>
                   <input type="range" min={2} max={20} value={mazeCols}
                     onChange={(e) => setMazeCols(Number(e.target.value))}
@@ -261,7 +261,7 @@ export const EnvTemplates = ({
                 </div>
                 <div>
                   <label className="block text-xs text-slate-400 mb-1">
-                    Cell Size <span className="text-cyan-300 font-mono">{cellSize}px</span>
+                    Cell Size <span className="text-teal-300 font-mono">{cellSize}px</span>
                   </label>
                   <input type="range" min={30} max={120} step={5} value={cellSize}
                     onChange={(e) => setCellSize(Number(e.target.value))}
@@ -274,7 +274,7 @@ export const EnvTemplates = ({
                     value={mazeSeed}
                     onChange={(e) => setMazeSeed(e.target.value === "" ? "" : Number(e.target.value))}
                     placeholder="random"
-                    className="w-full rounded-lg border border-night-600 bg-night-900 px-2 py-1.5
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-2 py-1.5
                                text-xs text-slate-200 focus:border-amber-500 focus:outline-none"
                   />
                 </div>
@@ -306,20 +306,20 @@ export const EnvTemplates = ({
                   onClick={() => { onSelect(tmpl.key, tmpl.label, worldSummary); onClose(); }}
                   className={`text-left rounded-xl border p-3.5 transition-all group ${
                     selected
-                      ? "border-cyan-500/70 bg-cyan-500/10"
-                      : "border-night-700 bg-night-800/60 hover:border-slate-600 hover:bg-night-800"
+                      ? "border-teal-500/70 bg-teal-500/10"
+                      : "border-slate-800 bg-slate-900/60 hover:border-slate-600 hover:bg-slate-900"
                   }`}
                 >
                   {/* Minimap preview if world data is available, otherwise emoji icon */}
                   {worldSummary ? (
-                    <div className="mb-2 rounded overflow-hidden border border-night-600 w-full">
+                    <div className="mb-2 rounded overflow-hidden border border-slate-700 w-full">
                       <EnvMinimap world={worldSummary} size={120} className="w-full" />
                     </div>
                   ) : (
                     <div className="text-2xl mb-1.5">{tmpl.icon}</div>
                   )}
                   <div className={`text-sm font-semibold mb-0.5 flex items-center gap-1 ${
-                    selected ? "text-cyan-200" : "text-slate-100"
+                    selected ? "text-teal-200" : "text-slate-100"
                   }`}>
                     {worldSummary ? null : null}{tmpl.label}
                     {tmpl.hasGoal && <span className="text-amber-400 text-xs">★</span>}
@@ -333,7 +333,7 @@ export const EnvTemplates = ({
                         className={`px-1.5 py-0.5 rounded text-xs font-medium ${
                           tag.startsWith("★")
                             ? "bg-amber-500/20 text-amber-300"
-                            : "bg-night-700 text-slate-500"
+                            : "bg-slate-800/80 text-slate-400"
                         }`}
                       >{tag}</span>
                     ))}

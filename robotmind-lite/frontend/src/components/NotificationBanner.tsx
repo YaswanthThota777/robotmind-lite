@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 
 type NotificationBannerProps = {
   message: string;
@@ -8,21 +8,27 @@ type NotificationBannerProps = {
 };
 
 export const NotificationBanner = ({ message, type, show, onClose }: NotificationBannerProps) => {
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (show) {
       const timer = setTimeout(() => {
-        onClose();
+        onCloseRef.current();
       }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [show, onClose]);
+  }, [show]);
 
   if (!show) return null;
 
   const colors = {
     success: "from-emerald-500/20 to-green-500/20 border-emerald-500/40 text-emerald-100",
-    error: "from-red-500/20 to-pink-500/20 border-red-500/40 text-red-100",
-    info: "from-cyan-500/20 to-blue-500/20 border-cyan-500/40 text-cyan-100",
+    error: "from-red-500/20 to-amber-500/20 border-red-500/40 text-red-100",
+    info: "from-teal-500/20 to-blue-500/20 border-teal-500/40 text-teal-100",
     warning: "from-amber-500/20 to-orange-500/20 border-amber-500/40 text-amber-100",
   };
 
@@ -52,3 +58,4 @@ export const NotificationBanner = ({ message, type, show, onClose }: Notificatio
     </div>
   );
 };
+

@@ -1,4 +1,4 @@
-﻿import type { Project } from "../types";
+import type { Project } from "../types";
 import { RobotPreviewSVG } from "./RobotDesigner";
 
 interface SidebarProps {
@@ -7,25 +7,25 @@ interface SidebarProps {
 
 // Generic features list shown when no project is active (e.g. fallback)
 const FEATURES = [
-  { icon: "🎯", label: "V1 Models",   description: "3 flat-ground types", active: true },
-  { icon: "⚡", label: "Real-time",   description: "Live simulation",      active: true },
-  { icon: "📊", label: "Analytics",   description: "Training metrics",     active: true },
+  { icon: "??", label: "V1 Models",   description: "3 flat-ground types", active: true },
+  { icon: "?", label: "Real-time",   description: "Live simulation",      active: true },
+  { icon: "??", label: "Analytics",   description: "Training metrics",     active: true },
 ];
 
 const STATUS_COLOR: Record<string, string> = {
-  draft:    "text-slate-400 bg-night-800 border-night-700",
+  draft:    "text-slate-400 bg-slate-900 border-slate-800",
   training: "text-amber-300 bg-amber-900/30 border-amber-700",
   trained:  "text-emerald-300 bg-emerald-900/30 border-emerald-700",
 };
 
 export const Sidebar = ({ project }: SidebarProps) => {
   if (project) {
-    // ── Project-aware sidebar ────────────────────────────────────────────────
+    // -- Project-aware sidebar ------------------------------------------------
     const { robot, algorithm, environmentProfile, modelProfile, steps, status } = project;
     return (
-      <aside className="flex h-full flex-col gap-5 bg-gradient-to-b from-night-900 to-night-800 p-5 shadow-2xl overflow-y-auto">
+      <aside className="flex h-full flex-col gap-5 bg-gradient-to-b from-slate-950 to-slate-900 p-5 shadow-2xl overflow-y-auto">
         {/* Robot preview */}
-        <div className="rounded-2xl border border-night-700 bg-night-800/60 p-4 flex flex-col items-center gap-3">
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 flex flex-col items-center gap-3">
           <RobotPreviewSVG design={robot} size={130} />
           <div className="text-center">
             <div className="text-sm font-bold text-slate-100 truncate max-w-[200px]">{project.name}</div>
@@ -36,15 +36,15 @@ export const Sidebar = ({ project }: SidebarProps) => {
         </div>
 
         {/* Robot stats */}
-        <div className="rounded-xl border border-night-700 bg-night-800/60 p-4 space-y-2">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-purple-400 mb-2">Robot Config</div>
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-2">
+          <div className="text-[10px] uppercase tracking-[0.3em] text-amber-400 mb-2">Robot Config</div>
           {[
             ["Shape",     robot.shape],
             ["Movement",  robot.movementType],
-            ["Sensors",   `${robot.sensors.count} rays • ${robot.sensors.fov}° FOV`],
+            ["Sensors",   `${robot.sensors.count} rays � ${robot.sensors.fov}� FOV`],
             ["Range",     `${robot.sensors.range} px`],
             ["Speed",     `${robot.speed} px/s`],
-            ["Turn",      `${robot.turnRate}°/step`],
+            ["Turn",      `${robot.turnRate}�/step`],
           ].map(([label, value]) => (
             <div key={label} className="flex items-center justify-between text-xs">
               <span className="text-slate-500">{label}</span>
@@ -54,8 +54,8 @@ export const Sidebar = ({ project }: SidebarProps) => {
         </div>
 
         {/* Training config */}
-        <div className="rounded-xl border border-night-700 bg-night-800/60 p-4 space-y-2">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-cyan-400 mb-2">Training Config</div>
+        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-2">
+          <div className="text-[10px] uppercase tracking-[0.3em] text-teal-400 mb-2">Training Config</div>
           {[
             ["Algorithm",    algorithm],
             ["Environment",  environmentProfile.replace(/_v\d+$/, "").replaceAll("_", " ")],
@@ -70,12 +70,12 @@ export const Sidebar = ({ project }: SidebarProps) => {
         </div>
 
         {/* System status */}
-        <div className="mt-auto rounded-xl border border-night-600 bg-night-700/60 p-4">
+        <div className="mt-auto rounded-xl border border-slate-700 bg-slate-800/60 p-4">
           <div className="text-xs font-semibold text-slate-300 mb-2">System Status</div>
           <div className="space-y-1.5 text-xs text-slate-400">
             <div className="flex items-center justify-between">
               <span>Backend</span>
-              <span className="text-emerald-300">● Online</span>
+              <span className="text-emerald-300">? Online</span>
             </div>
             <div className="flex items-center justify-between">
               <span>Export</span>
@@ -87,10 +87,10 @@ export const Sidebar = ({ project }: SidebarProps) => {
     );
   }
 
-  // ── Generic sidebar (home page / fallback) ──────────────────────────────────
+  // -- Generic sidebar (home page / fallback) ----------------------------------
   return (
-    <aside className="flex h-full flex-col gap-6 bg-gradient-to-b from-night-900 to-night-800 p-6 shadow-2xl">
-      <div className="rounded-2xl border border-night-700 bg-night-800/60 p-4">
+    <aside className="flex h-full flex-col gap-6 bg-gradient-to-b from-slate-950 to-slate-900 p-6 shadow-2xl">
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
         <div className="text-xs uppercase tracking-[0.4em] text-emerald-400">Quick Start</div>
         <div className="mt-2 text-lg font-semibold text-slate-100">Training Hub</div>
         <div className="mt-2 text-xs text-slate-400">Build and deploy RL models in minutes</div>
@@ -101,28 +101,28 @@ export const Sidebar = ({ project }: SidebarProps) => {
         {FEATURES.map((item) => (
           <div
             key={item.label}
-            className="flex items-start gap-3 rounded-xl border border-night-600 bg-night-700/40 p-3 transition hover:border-emerald-500/30 hover:bg-night-700"
+            className="flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-800/40 p-3 transition hover:border-emerald-500/30 hover:bg-slate-800"
           >
             <span className="text-2xl">{item.icon}</span>
             <div className="flex-1">
               <div className="text-sm font-medium text-slate-100">{item.label}</div>
               <div className="text-xs text-slate-400">{item.description}</div>
             </div>
-            {item.active && <span className="text-emerald-400">✓</span>}
+            {item.active && <span className="text-emerald-400">?</span>}
           </div>
         ))}
       </div>
 
-      <div className="mt-auto rounded-xl border border-night-600 bg-night-700/60 p-4">
+      <div className="mt-auto rounded-xl border border-slate-700 bg-slate-800/60 p-4">
         <div className="text-xs font-semibold text-slate-300">System Status</div>
         <div className="mt-2 space-y-1.5 text-xs text-slate-400">
           <div className="flex items-center justify-between">
             <span>Backend</span>
-            <span className="text-emerald-300">● Online</span>
+            <span className="text-emerald-300">? Online</span>
           </div>
           <div className="flex items-center justify-between">
             <span>Algorithms</span>
-            <span className="text-cyan-300">PPO • A2C • DQN</span>
+            <span className="text-teal-300">PPO � A2C � DQN</span>
           </div>
           <div className="flex items-center justify-between">
             <span>Export</span>
@@ -133,3 +133,4 @@ export const Sidebar = ({ project }: SidebarProps) => {
     </aside>
   );
 };
+

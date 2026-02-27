@@ -77,3 +77,4 @@ export const EnvMinimap = ({ world, size = 80, className = "" }: EnvMinimapProps
     </svg>
   );
 };
+

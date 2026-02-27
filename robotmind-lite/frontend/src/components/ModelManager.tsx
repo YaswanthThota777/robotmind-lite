@@ -195,7 +195,7 @@ export const ModelManager = ({ apiBase, onClose, onTestPlaybackStart, onTestPlay
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <span className="text-lg font-bold text-slate-100">Run #{run.run_id}</span>
-                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                        <span className="px-2 py-0.5 rounded text-xs font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/30">
                           {run.algorithm}
                         </span>
                         <span className={`px-2 py-0.5 rounded text-xs font-semibold ${
@@ -208,7 +208,7 @@ export const ModelManager = ({ apiBase, onClose, onTestPlaybackStart, onTestPlay
                           {run.status}
                         </span>
                         {run.deployment_ready && (
-                          <span className="px-2 py-0.5 rounded text-xs font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                          <span className="px-2 py-0.5 rounded text-xs font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                             ✓ Production Ready
                           </span>
                         )}
@@ -240,7 +240,7 @@ export const ModelManager = ({ apiBase, onClose, onTestPlaybackStart, onTestPlay
                             e.stopPropagation();
                             downloadModel(run.run_id, "sb3");
                           }}
-                          className="px-3 py-1.5 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-medium transition-colors whitespace-nowrap"
+                          className="px-3 py-1.5 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 text-teal-300 border border-teal-500/40 text-xs font-medium transition-colors whitespace-nowrap"
                         >
                           ⬇ SB3 Model
                         </button>
@@ -251,7 +251,7 @@ export const ModelManager = ({ apiBase, onClose, onTestPlaybackStart, onTestPlay
                             e.stopPropagation();
                             downloadModel(run.run_id, "onnx");
                           }}
-                          className="px-3 py-1.5 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-medium transition-colors whitespace-nowrap"
+                          className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-medium transition-colors whitespace-nowrap"
                         >
                           ⬇ ONNX Model
                         </button>
@@ -323,3 +323,4 @@ export const ModelManager = ({ apiBase, onClose, onTestPlaybackStart, onTestPlay
     </div>
   );
 };
+

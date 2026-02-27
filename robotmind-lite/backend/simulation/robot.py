@@ -37,11 +37,11 @@ class Robot:
 
         self.space.add(self.body, self.shape)
 
-    def reset(self, x: float, y: float) -> None:
+    def reset(self, x: float, y: float, angle_degrees: float = 0.0) -> None:
         """Reset robot state to initial pose."""
         self.body.position = (x, y)
         self.body.velocity = (0.0, 0.0)
-        self.angle_degrees = 0.0
+        self.angle_degrees = angle_degrees
 
     def move_forward(self) -> None:
         """Apply forward velocity along heading."""

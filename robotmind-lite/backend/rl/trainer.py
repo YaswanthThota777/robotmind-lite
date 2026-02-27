@@ -35,7 +35,7 @@ from backend.rl.deployment import (
 )
 from backend.rl.export import export_model_to_onnx
 from backend.rl.live_render_callback import LiveRenderCallback
-from backend.simulation.gym_env import ContinuousRobotEnv, RobotEnv
+from backend.simulation.gym_env import ContinuousRobotEnv, CurriculumRobotEnv, RobotEnv, VisitedGridWrapper
 from backend.simulation.presets import get_environment_profile, get_model_profile
 from backend.ws import training_stream
 
@@ -82,34 +82,41 @@ SUPPORTED_ALGORITHMS: dict[str, dict[str, object]] = {
 # These are merged with model-profile params; user algorithm_params override everything.
 ALGORITHM_DEFAULTS: dict[str, dict[str, object]] = {
     "PPO": {
-        "n_steps": 512,
+        # n_steps: how many env steps are collected per update.  Match or exceed
+        # typical episode length (700 steps) so rollout buffers contain complete
+        # episodes and the value-function baseline is stable.
+        "n_steps": 2048,
         "batch_size": 64,
         "gae_lambda": 0.95,
-        "gamma": 0.99,
-        "ent_coef": 0.01,
+        "gamma": 0.995,        # higher gamma → robot values future survival highly
+        "ent_coef": 0.015,     # encourages exploration; prevents premature convergence
         "clip_range": 0.2,
+        "n_epochs": 10,
     },
     "A2C": {
         "gae_lambda": 0.95,
-        "gamma": 0.99,
-        "ent_coef": 0.01,
-        "n_steps": 5,
+        "gamma": 0.995,
+        "ent_coef": 0.015,
+        "n_steps": 16,         # A2C updates more frequently
     },
     "DQN": {
-        "buffer_size": 50_000,
-        "learning_starts": 1_000,
+        # DQN needs a large replay buffer and long exploration to learn in
+        # sparse-reward environments.  Old defaults (exploration_fraction=0.3)
+        # exhausted random exploration after only ~3k steps / 6 episodes.
+        "buffer_size": 100_000,
+        "learning_starts": 3_000,       # wait for more diverse experience
         "batch_size": 64,
-        "exploration_fraction": 0.3,
+        "exploration_fraction": 0.5,    # explore for half of total steps
         "exploration_final_eps": 0.05,
-        "gamma": 0.99,
+        "gamma": 0.995,
         "train_freq": 4,
-        "target_update_interval": 500,
+        "target_update_interval": 1_000,
     },
     "SAC": {
         "buffer_size": 100_000,
         "learning_starts": 1_000,
         "batch_size": 256,
-        "gamma": 0.99,
+        "gamma": 0.995,
         "ent_coef": "auto",
         "train_freq": 1,
         "gradient_steps": 1,
@@ -118,13 +125,13 @@ ALGORITHM_DEFAULTS: dict[str, dict[str, object]] = {
         "buffer_size": 100_000,
         "learning_starts": 1_000,
         "batch_size": 256,
-        "gamma": 0.99,
+        "gamma": 0.995,
     },
     "DDPG": {
         "buffer_size": 100_000,
         "learning_starts": 1_000,
         "batch_size": 256,
-        "gamma": 0.99,
+        "gamma": 0.995,
     },
 }
 
@@ -240,6 +247,8 @@ class TrainingManager:
         environment_profile: str = "arena_basic",
         model_profile: str = "balanced",
         algorithm_params: dict[str, object] | None = None,
+        memory_mode: str | None = None,
+        goal_randomize: bool | None = None,
         live_render: bool = False,
         render_freq: int = 100,
     ) -> dict[str, Any]:
@@ -270,6 +279,8 @@ class TrainingManager:
                 algorithm=algorithm_key,
                 environment=f"RobotEnv:{environment_profile}",
                 model_label=f"{model_label_base} [{model_profile}]",
+                memory_mode=memory_mode or "standard",
+                goal_randomize=goal_randomize,
             )
             now = datetime.utcnow().isoformat()
             self._state = TrainingState(
@@ -301,6 +312,7 @@ class TrainingManager:
                     environment_profile=environment_profile,
                     model_profile=model_profile,
                     algorithm_params=algorithm_params,
+                    memory_mode=memory_mode,
                     live_render=live_render,
                     render_freq=render_freq,
                 )
@@ -315,6 +327,7 @@ class TrainingManager:
         environment_profile: str,
         model_profile: str,
         algorithm_params: dict[str, object] | None,
+        memory_mode: str | None,
         live_render: bool = False,
         render_freq: int = 100,
     ) -> None:
@@ -327,6 +340,7 @@ class TrainingManager:
                 environment_profile,
                 model_profile,
                 algorithm_params,
+                memory_mode,
                 live_render,
                 render_freq,
             )
@@ -362,6 +376,7 @@ class TrainingManager:
         environment_profile: str,
         model_profile: str,
         algorithm_params: dict[str, object] | None,
+        memory_mode: str | None,
         live_render: bool = False,
         render_freq: int = 100,
     ) -> dict[str, Any]:
@@ -376,12 +391,23 @@ class TrainingManager:
         env_profile = get_environment_profile(environment_profile)
         model_profile_cfg = get_model_profile(model_profile)
 
-        if control_mode == "continuous":
-            env = DummyVecEnv(
-                [lambda: RecordEpisodeStatistics(ContinuousRobotEnv(profile=environment_profile))]
-            )
-        else:
-            env = DummyVecEnv([lambda: RecordEpisodeStatistics(RobotEnv(profile=environment_profile))])
+        memory_mode = (memory_mode or "standard").lower()
+
+        def _make_env() -> Any:
+            _env_class_flag = str(
+                env_profile.get("metadata", {}).get("env_class", "")
+            ).lower()
+            if control_mode == "continuous":
+                base_env: Any = ContinuousRobotEnv(profile=environment_profile)
+            elif _env_class_flag == "curriculum":
+                base_env = CurriculumRobotEnv(profile=environment_profile)
+            else:
+                base_env = RobotEnv(profile=environment_profile)
+            if memory_mode == "visited_grid":
+                base_env = VisitedGridWrapper(base_env)
+            return RecordEpisodeStatistics(base_env)
+
+        env = DummyVecEnv([_make_env])
         obs_dim = int(env.observation_space.shape[0])
 
         model_kwargs: dict[str, object] = {
@@ -436,6 +462,7 @@ class TrainingManager:
             "model_profile": model_profile,
             "model_profile_label": model_profile_cfg["label"],
             "algorithm_params": algorithm_params or {},
+            "memory_mode": memory_mode,
             "observation_dim": obs_dim,
         }
         manifest_path = write_deployment_manifest(

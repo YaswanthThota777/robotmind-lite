@@ -183,6 +183,8 @@ export const SimulationCanvas = ({
             ray_count: es.ray_count,
             ray_length: es.ray_length,
             ray_fov_degrees: es.ray_fov_degrees,
+            sensor_angles_abs: es.sensor_angles_abs ?? null,
+            sensor_angle_labels: es.sensor_angle_labels ?? null,
             goal_x: es.goal_x ?? null,
             goal_y: es.goal_y ?? null,
             goal_radius: es.goal_radius ?? null,
@@ -190,9 +192,11 @@ export const SimulationCanvas = ({
           backendActiveRef.current = true;
           if (es.sensor_distances || es.rays) {
             const rays: number[] = es.sensor_distances ?? es.rays;
+            const labels: string[] | null = es.sensor_angle_labels ?? null;
             onSensors(rays.map((value: number, index: number) => ({
               index,
               distance: Number(value.toFixed(2)),
+              label: labels?.[index],
             })));
           }
         }
@@ -239,11 +243,12 @@ export const SimulationCanvas = ({
           ray_count: payload.ray_count,
           ray_length: payload.ray_length,
           ray_fov_degrees: payload.ray_fov_degrees,
+          sensor_angles_abs: payload.sensor_angles_abs ?? null,
+          sensor_angle_labels: payload.sensor_angle_labels ?? null,
         };
-        // During active training, the training WS (env_state) is the source of truth.
-        // Skip updating backendStateRef from the 60fps preview stream to prevent
-        // it from overwriting the real training env state with preview env state.
-        if (!isTrainingActiveRef.current) {
+        // During active training, use env_state if it exists; otherwise allow
+        // /ws/environment to keep the canvas alive until env_state arrives.
+        if (!isTrainingActiveRef.current || !backendActiveRef.current) {
           backendStateRef.current = state;
           backendActiveRef.current = true;
         } else {
@@ -262,10 +267,12 @@ export const SimulationCanvas = ({
         }
 
         if (state.sensor_distances) {
+          const labels = state.sensor_angle_labels;
           onSensors(
             state.sensor_distances.map((value: number, index: number) => ({
               index,
               distance: Number(value.toFixed(2)),
+              label: labels?.[index],
             }))
           );
         }
@@ -293,7 +300,9 @@ export const SimulationCanvas = ({
         // Backend is streaming live env data — render it directly
         renderFrame();
       } else if (isTrainingActiveRef.current) {
-        // Training started but backend WS not yet streaming — hold a static frame, no local demo
+        // Training started but backend WS not yet streaming — show local demo
+        updateRobot(delta);
+        updateSensors();
         renderFrame();
       } else {
         // Completely idle (no training, no backend) — local demo so canvas isn't blank
@@ -556,38 +565,66 @@ export const SimulationCanvas = ({
       updateSensors();
     }
 
-    const rayDisplayLen = backendState?.ray_length ?? projectRobot?.sensorRange ?? 220; // world units
+    const rayDisplayLen = backendState?.ray_length ?? projectRobot?.sensorRange ?? 220;
     const rayFov        = backendState?.ray_fov_degrees;
-    const rayAngles     = getRayAngles(entity.angle, rayData.length, rayFov);
+    // Fixed-angle sensors: backend sends absolute world-space angles (degrees)
+    const fixedAnglesAbs = backendState?.sensor_angles_abs;
+    const fixedLabels    = backendState?.sensor_angle_labels;
+    const rayAngles = fixedAnglesAbs
+      ? fixedAnglesAbs.map(a => (a * Math.PI) / 180)
+      : getRayAngles(entity.angle, rayData.length, rayFov);
+
+    // Helper: distance → colour  (green safe → amber warn → red danger)
+    const rayColor = (d: number): string => {
+      if (d > 0.55) return "rgba(34, 197, 94, 0.90)";   // green  – safe
+      if (d > 0.30) return "rgba(251, 191, 36, 0.90)";  // amber  – warning
+      return              "rgba(239, 68,  68, 0.90)";   // red    – danger
+    };
+
     rayData.forEach((distance, index) => {
       const angle = rayAngles[index];
       const endX = entity.x + Math.cos(angle) * distance * rayDisplayLen;
       const endY = entity.y + Math.sin(angle) * distance * rayDisplayLen;
+      const color = rayColor(distance);
 
-      // Enhanced rays with gradient
+      // Gradient ray: bright at tip, fades at robot centre
       const rayGradient = ctx.createLinearGradient(
-        entity.x * scale,
-        entity.y * scale,
-        endX * scale,
-        endY * scale
+        entity.x * scale, entity.y * scale,
+        endX * scale,      endY * scale
       );
-      rayGradient.addColorStop(0, visual?.ray ?? "rgba(56, 189, 248, 0.6)");
-      rayGradient.addColorStop(1, "rgba(56, 189, 248, 0.1)");
+      rayGradient.addColorStop(0, fixedAnglesAbs ? color.replace("0.90", "0.30") : (visual?.ray ?? "rgba(56, 189, 248, 0.6)"));
+      rayGradient.addColorStop(1, fixedAnglesAbs ? color : (visual?.ray ?? "rgba(56, 189, 248, 0.1)"));
+
       ctx.strokeStyle = rayGradient;
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth   = fixedAnglesAbs ? 2.5 : 1.5;
       ctx.beginPath();
       ctx.moveTo(entity.x * scale, entity.y * scale);
       ctx.lineTo(endX * scale, endY * scale);
       ctx.stroke();
-      
-      // Add endpoint glow
-      ctx.fillStyle = visual?.ray ?? "rgba(56, 189, 248, 0.8)";
-      ctx.shadowColor = visual?.ray ?? "#38bdf8";
-      ctx.shadowBlur = 4;
+
+      // Endpoint glow dot — larger & brighter for fixed sensors
+      ctx.fillStyle   = color;
+      ctx.shadowColor = color;
+      ctx.shadowBlur  = fixedAnglesAbs ? 8 : 4;
       ctx.beginPath();
-      ctx.arc(endX * scale, endY * scale, 2, 0, Math.PI * 2);
+      ctx.arc(endX * scale, endY * scale, fixedAnglesAbs ? 3.5 : 2, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
+
+      // Distance label for fixed-angle sensors
+      if (fixedAnglesAbs) {
+        const pxDist = Math.round(distance * rayDisplayLen);
+        const label  = fixedLabels?.[index] ?? `S${index + 1}`;
+        const text   = `${label}  ${pxDist}u`;
+        ctx.font      = "bold 10px monospace";
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.92;
+        // Offset label slightly away from the robot along the ray
+        const lx = endX * scale + Math.cos(angle) * 6;
+        const ly = endY * scale + Math.sin(angle) * 6;
+        ctx.fillText(text, lx, ly);
+        ctx.globalAlpha = 1.0;
+      }
     });
 
     // Enhanced robot with model-specific shape
@@ -795,7 +832,7 @@ export const SimulationCanvas = ({
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="rounded-2xl border border-night-700 bg-gradient-to-br from-night-900 to-night-800 p-4 shadow-2xl relative">
+      <div className="rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-950 to-slate-900 p-4 shadow-2xl relative">
 
         {/* ── Idle placeholder — covers canvas when no training / test is running ── */}
         {showIdlePlaceholder && (
@@ -803,10 +840,10 @@ export const SimulationCanvas = ({
                           rounded-2xl bg-[#0c1220] gap-5 pointer-events-none select-none">
             {/* animated ring */}
             <div className="relative flex items-center justify-center">
-              <div className="w-20 h-20 rounded-full border-2 border-dashed border-night-600
+              <div className="w-20 h-20 rounded-full border-2 border-dashed border-slate-700
                               animate-spin [animation-duration:8s]" />
-              <div className="absolute w-14 h-14 rounded-full border border-night-700
-                              bg-gradient-to-br from-night-800 to-night-900
+              <div className="absolute w-14 h-14 rounded-full border border-slate-800
+                              bg-gradient-to-br from-slate-900 to-slate-950
                               flex items-center justify-center text-2xl">
                 🤖
               </div>
@@ -817,7 +854,7 @@ export const SimulationCanvas = ({
               </p>
               <p className="text-[11px] text-slate-500 leading-relaxed">
                 Configure your environment, choose an algorithm,<br />
-                then click <span className="text-cyan-400 font-medium">Start Training</span> to watch the agent learn.
+                then click <span className="text-teal-400 font-medium">Start Training</span> to watch the agent learn.
               </p>
             </div>
             {/* subtle grid lines */}
@@ -858,13 +895,13 @@ export const SimulationCanvas = ({
                     <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-slate-800/60 border border-slate-700/50">
                       <div className={`w-1.5 h-1.5 rounded-full ${
                         (trainingEpisode ?? episodeCount) < 10 ? 'bg-amber-400' :
-                        (trainingEpisode ?? episodeCount) < 50 ? 'bg-cyan-400' :
-                        (trainingEpisode ?? episodeCount) < 100 ? 'bg-purple-400' : 'bg-emerald-400'
+                        (trainingEpisode ?? episodeCount) < 50 ? 'bg-teal-400' :
+                        (trainingEpisode ?? episodeCount) < 100 ? 'bg-amber-400' : 'bg-emerald-400'
                       } shadow-lg`}></div>
                       <span className={`text-xs font-medium ${
                         (trainingEpisode ?? episodeCount) < 10 ? 'text-amber-300' :
-                        (trainingEpisode ?? episodeCount) < 50 ? 'text-cyan-300' :
-                        (trainingEpisode ?? episodeCount) < 100 ? 'text-purple-300' : 'text-emerald-300'
+                        (trainingEpisode ?? episodeCount) < 50 ? 'text-teal-300' :
+                        (trainingEpisode ?? episodeCount) < 100 ? 'text-amber-300' : 'text-emerald-300'
                       }`}>
                         {(trainingEpisode ?? episodeCount) < 10 ? 'Initializing' :
                          (trainingEpisode ?? episodeCount) < 50 ? 'Learning' :
@@ -884,7 +921,7 @@ export const SimulationCanvas = ({
                   </div>
                   <div className="relative h-2 bg-slate-800/80 rounded-full overflow-hidden border border-slate-700/50">
                     <div 
-                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 via-cyan-500 to-emerald-400 transition-all duration-300 ease-out"
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 transition-all duration-300 ease-out"
                       style={{ width: `${trainingProgress}%` }}
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
@@ -905,7 +942,7 @@ export const SimulationCanvas = ({
           ref={canvasRef}
           width={canvasSize.width}
           height={canvasSize.height}
-          className="rounded-xl border border-night-600 shadow-inner"
+          className="rounded-xl border border-slate-700 shadow-inner"
         />
       </div>
       <div className="rounded-xl border border-slate-700/50 bg-gradient-to-br from-slate-900/90 to-slate-800/90 backdrop-blur-sm">
@@ -917,7 +954,7 @@ export const SimulationCanvas = ({
                 status === 'collision' ? 'bg-red-400 shadow-red-400/50' : 
                 status === 'waiting' ? 'bg-amber-400 animate-pulse shadow-amber-400/50' :
                 status === 'idle' ? 'bg-slate-600' :
-                'bg-cyan-400 shadow-cyan-400/50'
+                'bg-teal-400 shadow-teal-400/50'
               }`}></div>
               <div className="flex flex-col">
                 <span className="text-[10px] text-slate-500 uppercase tracking-wider">Status</span>
@@ -925,7 +962,7 @@ export const SimulationCanvas = ({
                   status === 'streaming' ? 'text-emerald-300' :
                   status === 'waiting' ? 'text-amber-300' :
                   status === 'idle' ? 'text-slate-400' :
-                  'text-cyan-300'
+                  'text-teal-300'
                 }`}>
                   {status === 'idle' ? 'Paused' : 
                    status === 'waiting' ? 'Initializing' :
@@ -962,3 +999,4 @@ export const SimulationCanvas = ({
     </div>
   );
 };
+

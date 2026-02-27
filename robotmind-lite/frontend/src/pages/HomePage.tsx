@@ -35,15 +35,15 @@ const FEATURES = [
     icon: "🧠",
     title: "6 RL Algorithms",
     desc: "PPO, A2C, DQN, SAC, TD3, DDPG — pick what fits your robot: discrete or continuous control.",
-    color: "from-cyan-900/40 to-cyan-800/20 border-cyan-800/50",
-    accent: "text-cyan-400",
+    color: "from-teal-900/40 to-teal-800/20 border-teal-800/50",
+    accent: "text-teal-400",
   },
   {
     icon: "📡",
     title: "Up to 24 Sensors",
     desc: "Configurable ray-cast sensors with custom FOV, range and placement. Front, surround or custom layout.",
-    color: "from-violet-900/40 to-violet-800/20 border-violet-800/50",
-    accent: "text-violet-400",
+    color: "from-amber-900/40 to-amber-800/20 border-amber-800/50",
+    accent: "text-amber-400",
   },
   {
     icon: "🗺️",
@@ -56,15 +56,15 @@ const FEATURES = [
     icon: "📊",
     title: "Live Training Metrics",
     desc: "Real-time reward charts, sensor heatmaps, collision rates and episode stats — all while training runs.",
-    color: "from-pink-900/40 to-pink-800/20 border-pink-800/50",
-    accent: "text-pink-400",
+    color: "from-amber-900/40 to-amber-800/20 border-amber-800/50",
+    accent: "text-amber-400",
   },
   {
     icon: "🚀",
     title: "One-click Deploy",
     desc: "Export trained models as ONNX bundles. Download and run inference anywhere with zero dependencies.",
-    color: "from-sky-900/40 to-sky-800/20 border-sky-800/50",
-    accent: "text-sky-400",
+    color: "from-amber-900/40 to-amber-800/20 border-amber-800/50",
+    accent: "text-amber-400",
   },
 ];
 
@@ -77,14 +77,14 @@ const STATS = [
 
 export const HomePage = ({ projects, onNavigate, onDeleteProject }: HomePageProps) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-night-900 via-night-800 to-night-900 text-slate-100">
+    <div className="min-h-screen rm-grid-bg text-slate-100">
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <header className="border-b border-night-700 bg-night-900/90 backdrop-blur-sm sticky top-0 z-20">
+      <header className="border-b border-slate-800/60 bg-[#0b1120]/85 backdrop-blur-md sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500
-                            flex items-center justify-center text-base font-black text-white shadow-lg shadow-emerald-900/30">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-500 to-amber-500
+                            flex items-center justify-center text-base font-black text-white shadow-lg shadow-black/30">
               R
             </div>
             <div>
@@ -97,8 +97,8 @@ export const HomePage = ({ projects, onNavigate, onDeleteProject }: HomePageProp
             <button
               onClick={() => onNavigate("wizard")}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl
-                         bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500
-                         text-white text-sm font-semibold shadow-lg shadow-emerald-900/30 transition-all active:scale-95"
+                         bg-gradient-to-r from-teal-500 to-amber-500 hover:from-teal-400 hover:to-amber-400
+                         text-white text-sm font-semibold shadow-lg shadow-black/30 transition-all active:scale-95"
             >
               <span className="text-base leading-none">＋</span> New Project
             </button>
@@ -117,20 +117,20 @@ export const HomePage = ({ projects, onNavigate, onDeleteProject }: HomePageProp
               <div className="absolute top-[-120px] left-1/2 -translate-x-1/2 w-[700px] h-[700px]
                               rounded-full bg-emerald-500/5 blur-3xl" />
               <div className="absolute top-[100px] right-[-100px] w-[400px] h-[400px]
-                              rounded-full bg-cyan-500/5 blur-3xl" />
+                              rounded-full bg-teal-500/5 blur-3xl" />
             </div>
 
             <div className="relative max-w-5xl mx-auto px-8 pt-20 pb-16 text-center">
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full
-                              bg-emerald-900/40 border border-emerald-800/60 text-emerald-400
+                              bg-teal-900/30 border border-teal-800/60 text-teal-300
                               text-xs font-semibold uppercase tracking-widest mb-8">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
                 Reinforcement Learning Platform
               </div>
 
               <h1 className="text-6xl font-black tracking-tight mb-6 leading-none">
                 <span className="text-slate-100">Train AI</span>{" "}
-                <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-teal-300 to-amber-300 bg-clip-text text-transparent">
                   Robots
                 </span>
                 <br />
@@ -145,9 +145,9 @@ export const HomePage = ({ projects, onNavigate, onDeleteProject }: HomePageProp
               <div className="flex items-center justify-center gap-4 flex-wrap">
                 <button
                   onClick={() => onNavigate("wizard")}
-                  className="px-10 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-cyan-600
-                             hover:from-emerald-500 hover:to-cyan-500 text-white font-bold text-lg
-                             shadow-2xl shadow-emerald-900/40 transition-all hover:scale-105 active:scale-95"
+                  className="px-10 py-4 rounded-2xl bg-gradient-to-r from-teal-500 to-amber-500
+                             hover:from-teal-400 hover:to-amber-400 text-white font-bold text-lg
+                             shadow-2xl shadow-black/40 transition-all hover:scale-105 active:scale-95"
                 >
                   Build Your First Robot →
                 </button>
@@ -157,12 +157,12 @@ export const HomePage = ({ projects, onNavigate, onDeleteProject }: HomePageProp
           </section>
 
           {/* Stats strip */}
-          <section className="border-y border-night-700 bg-night-800/40">
+          <section className="border-y border-slate-800/60 bg-[#0b1120]/70">
             <div className="max-w-5xl mx-auto px-8 py-8 grid grid-cols-2 sm:grid-cols-4 gap-6">
               {STATS.map((s) => (
                 <div key={s.label} className="text-center">
                   <div className="text-4xl font-black text-slate-100 tabular-nums
-                                  bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+                                  bg-gradient-to-r from-teal-300 to-amber-300 bg-clip-text text-transparent">
                     {s.value}
                   </div>
                   <div className="text-sm text-slate-500 mt-1 font-medium">{s.label}</div>
@@ -195,9 +195,9 @@ export const HomePage = ({ projects, onNavigate, onDeleteProject }: HomePageProp
             <div className="mt-14 text-center">
               <button
                 onClick={() => onNavigate("wizard")}
-                className="px-12 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-cyan-600
-                           hover:from-emerald-500 hover:to-cyan-500 text-white font-bold text-lg
-                           shadow-xl shadow-emerald-900/30 transition-all hover:scale-105"
+                className="px-12 py-4 rounded-2xl bg-gradient-to-r from-teal-500 to-amber-500
+                           hover:from-teal-400 hover:to-amber-400 text-white font-bold text-lg
+                           shadow-xl shadow-black/30 transition-all hover:scale-105"
               >
                 Get Started — It's Free →
               </button>
@@ -219,8 +219,8 @@ export const HomePage = ({ projects, onNavigate, onDeleteProject }: HomePageProp
             <button
               onClick={() => onNavigate("wizard")}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl
-                         bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500
-                         text-white text-sm font-semibold transition-all active:scale-95 shadow-lg shadow-emerald-900/20"
+                         bg-gradient-to-r from-teal-500 to-amber-500 hover:from-teal-400 hover:to-amber-400
+                         text-white text-sm font-semibold transition-all active:scale-95 shadow-lg shadow-black/20"
             >
               ＋ New Project
             </button>
@@ -241,9 +241,9 @@ export const HomePage = ({ projects, onNavigate, onDeleteProject }: HomePageProp
             <button
               onClick={() => onNavigate("wizard")}
               className="flex flex-col items-center justify-center gap-4 min-h-[280px]
-                         rounded-2xl border-2 border-dashed border-night-700
-                         hover:border-emerald-600 hover:bg-emerald-950/10
-                         text-slate-600 hover:text-emerald-400 transition-all group"
+                         rounded-2xl border-2 border-dashed border-slate-800/70
+                         hover:border-teal-500 hover:bg-teal-950/10
+                         text-slate-600 hover:text-teal-300 transition-all group"
             >
               <div className="w-16 h-16 rounded-2xl border-2 border-dashed border-current
                               flex items-center justify-center text-3xl
@@ -285,12 +285,12 @@ const ProjectCard = ({ project, onOpen, onDelete }: CardProps) => {
   };
 
   return (
-    <div className="bg-night-900 border border-night-700 rounded-2xl overflow-hidden
+    <div className="bg-[#0b1120]/80 border border-slate-800/70 rounded-2xl overflow-hidden
                     hover:border-slate-600 hover:shadow-xl hover:shadow-black/40
                     transition-all group cursor-pointer"
          onClick={onOpen}>
       {/* Robot preview banner */}
-      <div className="h-52 flex items-center justify-center bg-gradient-to-b from-night-800 to-night-900 relative">
+      <div className="h-52 flex items-center justify-center bg-gradient-to-b from-[#0f172a] to-[#0b1120] relative">
         {/* Subtle glow behind robot */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="w-32 h-32 rounded-full blur-2xl opacity-30"
@@ -318,7 +318,7 @@ const ProjectCard = ({ project, onOpen, onDelete }: CardProps) => {
             `${(project.steps / 1000).toFixed(0)}K steps`,
           ].map((tag) => (
             <span key={tag}
-              className="px-2.5 py-1 rounded-lg bg-night-800 border border-night-700
+              className="px-2.5 py-1 rounded-lg bg-[#0f172a] border border-slate-800/70
                          text-xs text-slate-400 font-medium">
               {tag}
             </span>
@@ -334,8 +334,8 @@ const ProjectCard = ({ project, onOpen, onDelete }: CardProps) => {
         <div className="flex gap-2 mt-4">
           <button
             onClick={(e) => { e.stopPropagation(); onOpen(); }}
-            className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-700 to-cyan-700
-                       hover:from-emerald-600 hover:to-cyan-600 text-white text-sm font-semibold
+            className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-teal-600 to-amber-500
+                       hover:from-teal-500 hover:to-amber-400 text-white text-sm font-semibold
                        transition-all active:scale-95"
           >
             {project.status === "trained" ? "🔬 View & Test" : "🚀 Train"}
@@ -343,7 +343,7 @@ const ProjectCard = ({ project, onOpen, onDelete }: CardProps) => {
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(); }}
             title="Delete project"
-            className="w-10 flex items-center justify-center rounded-xl bg-night-800 border border-night-700
+            className="w-10 flex items-center justify-center rounded-xl bg-[#0f172a] border border-slate-800/70
                        hover:border-red-700/60 hover:text-red-400 text-slate-600
                        text-sm transition-all"
           >
@@ -354,3 +354,4 @@ const ProjectCard = ({ project, onOpen, onDelete }: CardProps) => {
     </div>
   );
 };
+

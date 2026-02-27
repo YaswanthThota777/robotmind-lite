@@ -24,7 +24,7 @@ from backend.database import (
 from backend.rl.export import export_model_to_onnx
 from backend.rl.trainer import SUPPORTED_ALGORITHMS, training_manager
 from backend.rl.templates import get_training_template, list_training_templates
-from backend.simulation.gym_env import ContinuousRobotEnv, RobotEnv
+from backend.simulation.gym_env import ContinuousRobotEnv, CurriculumRobotEnv, RobotEnv, VisitedGridWrapper
 from backend.simulation.presets import (
     list_environment_profiles,
     list_model_profiles,
@@ -66,6 +66,8 @@ class StartTrainingRequest(BaseModel):
     custom_model: dict[str, object] | None = None
     algorithm_params: dict[str, object] | None = None
     template_key: str | None = None
+    memory_mode: str | None = Field(default=None, pattern="^(standard|visited_grid)$")
+    goal_randomize: bool | None = None
 
 
 class CreateCustomProfileRequest(BaseModel):
@@ -85,6 +87,8 @@ class TestModelRequest(BaseModel):
     record_trajectory: bool = True
     record_episode: int = Field(default=0, ge=0)
     frame_skip: int = Field(default=1, ge=1, le=20)
+    memory_mode: str | None = Field(default=None, pattern="^(standard|visited_grid)$")
+    goal_randomize: bool | None = None
 
 
 class FineTuneRequest(BaseModel):
@@ -92,6 +96,7 @@ class FineTuneRequest(BaseModel):
     steps: int = Field(default=10_000, ge=500, le=500_000)
     environment_profile: str | None = None
     custom_environment: dict[str, object] | None = None
+    memory_mode: str | None = Field(default=None, pattern="^(standard|visited_grid)$")
 
 
 @router.post("/start-training")
@@ -104,6 +109,8 @@ async def start_training(payload: StartTrainingRequest) -> dict[str, object]:
         custom_environment = payload.custom_environment
         custom_model = payload.custom_model
         algorithm_params = payload.algorithm_params
+        memory_mode = payload.memory_mode
+        goal_randomize = payload.goal_randomize
 
         if payload.template_key:
             template = get_training_template(payload.template_key)
@@ -119,6 +126,17 @@ async def start_training(payload: StartTrainingRequest) -> dict[str, object]:
                 custom_model = template_custom_model
             if isinstance(template_algorithm_params, dict):
                 algorithm_params = template_algorithm_params
+
+        if goal_randomize is not None:
+            if custom_environment is None:
+                custom_environment = {"dynamics": {}}
+            elif not isinstance(custom_environment, dict):
+                raise HTTPException(status_code=422, detail="custom_environment must be a dict")
+            dynamics = custom_environment.get("dynamics")
+            if not isinstance(dynamics, dict):
+                custom_environment["dynamics"] = {}
+                dynamics = custom_environment["dynamics"]
+            dynamics["randomize_goal"] = bool(goal_randomize)
 
         if custom_environment is not None:
             generated_env_key = f"custom_env_{environment_profile}"
@@ -146,6 +164,8 @@ async def start_training(payload: StartTrainingRequest) -> dict[str, object]:
             environment_profile=environment_profile,
             model_profile=model_profile,
             algorithm_params=algorithm_params,
+            memory_mode=memory_mode,
+            goal_randomize=goal_randomize,
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
@@ -183,7 +203,7 @@ async def training_templates() -> list[dict[str, str]]:
 
 
 @router.get("/training-profiles")
-async def training_profiles() -> dict[str, list[dict[str, str]]]:
+async def training_profiles() -> dict[str, list[dict]]:
     """Return available environment and model profiles for training jobs."""
     return {
         "environment_profiles": list_environment_profiles(),
@@ -248,6 +268,8 @@ async def training_runs(
         run.setdefault("model_profile", run.get("model_label", ""))
         run.setdefault("environment_profile", run.get("environment", ""))
         run.setdefault("deployment_ready", bool(run.get("deployment_ready", 0)))
+        run.setdefault("memory_mode", run.get("memory_mode") or "standard")
+        run.setdefault("goal_randomize", run.get("goal_randomize"))
     return runs
 
 
@@ -320,15 +342,30 @@ async def test_model(payload: TestModelRequest) -> dict[str, object]:
         else:
             env_profile = "arena_basic"
 
-    if payload.custom_environment is not None:
+    custom_environment = payload.custom_environment
+    if payload.goal_randomize is not None:
+        if custom_environment is None:
+            custom_environment = {"dynamics": {}}
+        elif not isinstance(custom_environment, dict):
+            raise HTTPException(status_code=422, detail="custom_environment must be a dict")
+        dynamics = custom_environment.get("dynamics")
+        if not isinstance(dynamics, dict):
+            custom_environment["dynamics"] = {}
+            dynamics = custom_environment["dynamics"]
+        dynamics["randomize_goal"] = bool(payload.goal_randomize)
+
+    if custom_environment is not None:
         timestamp = datetime.utcnow().strftime("%H%M%S")
         env_profile = register_environment_profile(
             key=f"custom_test_{env_profile}_{payload.run_id}_{timestamp}",
             label=f"Test {env_profile}",
             description="User-provided test environment",
-            config_override=payload.custom_environment,
+            config_override=custom_environment,
             base_profile=env_profile,
         )
+
+    memory_mode = payload.memory_mode or run.get("memory_mode") or "standard"
+    memory_mode = str(memory_mode).lower()
 
     env_kwargs: dict[str, object] = {"profile": env_profile}
     if payload.max_steps is not None:
@@ -337,7 +374,17 @@ async def test_model(payload: TestModelRequest) -> dict[str, object]:
     if control_mode == "continuous":
         env = ContinuousRobotEnv(**env_kwargs)
     else:
-        env = RobotEnv(**env_kwargs)
+        from backend.simulation.presets import get_environment_profile as _gep
+        _env_class_flag = str(
+            _gep(env_profile).get("metadata", {}).get("env_class", "")
+        ).lower()
+        if _env_class_flag == "curriculum":
+            env = CurriculumRobotEnv(**env_kwargs)
+        else:
+            env = RobotEnv(**env_kwargs)
+
+    if memory_mode == "visited_grid":
+        env = VisitedGridWrapper(env)
 
     model = model_class.load(str(model_file))
 
@@ -497,21 +544,35 @@ async def fine_tune_model(payload: FineTuneRequest) -> dict[str, object]:
         env_value = str(run.get("environment") or "")
         env_profile = env_value.split(":", 1)[1] if ":" in env_value else (env_value or "flat_ground_differential_v1")
 
-    if payload.custom_environment is not None:
+    custom_environment = payload.custom_environment
+    if custom_environment is not None:
         timestamp = datetime.utcnow().strftime("%H%M%S")
         env_profile = register_environment_profile(
             key=f"finetune_{env_profile}_{payload.run_id}_{timestamp}",
             label=f"FineTune {env_profile}",
             description="Fine-tune environment override",
-            config_override=payload.custom_environment,
+            config_override=custom_environment,
             base_profile=env_profile,
         )
 
     def _run_finetune() -> dict[str, object]:
+        memory_mode = payload.memory_mode or run.get("memory_mode") or "standard"
+        memory_mode = str(memory_mode).lower()
+
         if control_mode == "continuous":
             env = ContinuousRobotEnv(profile=env_profile)
         else:
-            env = RobotEnv(profile=env_profile)  # type: ignore[assignment]
+            from backend.simulation.presets import get_environment_profile as _gep
+            _env_class_flag = str(
+                _gep(env_profile).get("metadata", {}).get("env_class", "")
+            ).lower()
+            if _env_class_flag == "curriculum":
+                env = CurriculumRobotEnv(profile=env_profile)  # type: ignore[assignment]
+            else:
+                env = RobotEnv(profile=env_profile)  # type: ignore[assignment]
+
+        if memory_mode == "visited_grid":
+            env = VisitedGridWrapper(env)
 
         env_obs_dim = int(env.observation_space.shape[0])
         model = model_class.load(str(model_file), env=env)

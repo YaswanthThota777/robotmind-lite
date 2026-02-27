@@ -20,7 +20,7 @@ export const ConsolePanel = ({ messages }: ConsolePanelProps) => {
     if (message.includes("✅")) return "text-emerald-300";
     if (message.includes("❌") || message.includes("ERROR")) return "text-red-300";
     if (message.includes("⚠️") || message.includes("CONFLICT")) return "text-amber-300";
-    if (message.includes("🚀")) return "text-cyan-300";
+    if (message.includes("🚀")) return "text-teal-300";
     if (message.includes("💡")) return "text-blue-300";
     return "text-slate-400";
   };
@@ -28,10 +28,10 @@ export const ConsolePanel = ({ messages }: ConsolePanelProps) => {
   const latest = messages[0] ?? "";
 
   return (
-    <div className="flex-shrink-0 border-t border-night-700 bg-night-900/90">
+    <div className="flex-shrink-0 border-t border-slate-800 bg-slate-950/90">
       {/* One-line summary bar – always visible */}
       <button
-        className="flex w-full items-center justify-between px-4 py-2 hover:bg-night-800/60 transition-colors"
+        className="flex w-full items-center justify-between px-4 py-2 hover:bg-slate-900/60 transition-colors"
         onClick={() => setOpen((v) => !v)}
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -60,3 +60,4 @@ export const ConsolePanel = ({ messages }: ConsolePanelProps) => {
     </div>
   );
 };
+

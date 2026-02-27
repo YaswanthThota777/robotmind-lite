@@ -1,10 +1,10 @@
-﻿/**
- * App.tsx – page router.
+/**
+ * App.tsx - page router.
  *
  * Pages:
- *  "home"     → HomePage      (project list, empty state, new-project button)
- *  "wizard"   → ProjectWizard (5-step robot creation flow)
- *  "training" → TrainingPage  (full simulation + training workspace)
+ *  "home"     - HomePage      (project list, empty state, new-project button)
+ *  "wizard"   - ProjectWizard (5-step robot creation flow)
+ *  "training" - TrainingPage  (full simulation + training workspace)
  */
 import { useState, useCallback } from "react";
 import { HomePage } from "./pages/HomePage";
@@ -14,7 +14,7 @@ import type { AppPage, ProfileOption, Project } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000";
 
-// ── project persistence ───────────────────────────────────────────────────────
+// -- project persistence -------------------------------------------------------
 
 const STORAGE_KEY = "robotmind_projects_v2";
 
@@ -31,11 +31,11 @@ const saveProjects = (projects: Project[]) => {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
   } catch {
-    /* storage full – ignore */
+    /* storage full - ignore */
   }
 };
 
-// ── app ───────────────────────────────────────────────────────────────────────
+// -- app -----------------------------------------------------------------------
 
 const App = () => {
   const [page,     setPage]     = useState<AppPage>("home");
@@ -56,14 +56,14 @@ const App = () => {
     saveProjects(updated);
   }, []);
 
-  // ── navigation ──────────────────────────────────────────────────────────────
+  // -- navigation --------------------------------------------------------------
 
   const handleNavigate = useCallback((target: AppPage, projectId?: string) => {
     if (projectId) setActiveId(projectId);
     setPage(target);
   }, []);
 
-  // ── project CRUD ────────────────────────────────────────────────────────────
+  // -- project CRUD ------------------------------------------------------------
 
   const handleCreateProject = useCallback(
     (project: Project) => persistProjects([project, ...projects]),
@@ -86,7 +86,7 @@ const App = () => {
 
   const activeProject = projects.find((p) => p.id === activeId) ?? null;
 
-  // ── render ──────────────────────────────────────────────────────────────────
+  // -- render ------------------------------------------------------------------
 
   if (page === "home") {
     return (
@@ -119,14 +119,14 @@ const App = () => {
     );
   }
 
-  // Fallback – no active project
+  // Fallback - no active project
   return (
-    <div className="h-screen flex items-center justify-center bg-night-900 text-slate-400">
+    <div className="h-screen flex items-center justify-center rm-grid-bg text-slate-400">
       <div className="text-center space-y-3">
-        <div className="text-4xl">🤖</div>
+        <div className="text-4xl">RM</div>
         <div className="text-sm">No project selected.</div>
         <button
-          className="px-4 py-2 rounded-lg bg-night-800 border border-night-700
+          className="px-4 py-2 rounded-lg bg-slate-900 border border-slate-800
                      hover:border-slate-600 text-xs text-slate-300 transition-colors"
           onClick={() => setPage("home")}
         >
@@ -138,3 +138,4 @@ const App = () => {
 };
 
 export default App;
+

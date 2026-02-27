@@ -280,7 +280,7 @@ export const RobotDesigner = ({ design, onChange }: RobotDesignerProps) => {
     <div className="flex gap-8 flex-wrap lg:flex-nowrap">
       {/* Left: preview */}
       <div className="flex-shrink-0 flex flex-col items-center gap-4">
-        <div className="bg-night-900 border border-night-700 rounded-2xl p-6">
+        <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6">
           <RobotPreviewSVG design={design} size={220} />
         </div>
 
@@ -303,22 +303,22 @@ export const RobotDesigner = ({ design, onChange }: RobotDesignerProps) => {
         </div>
 
         {/* Quick stats */}
-        <div className="bg-night-900 border border-night-700 rounded-xl px-5 py-3 text-xs w-full space-y-1">
+        <div className="bg-slate-950 border border-slate-800 rounded-xl px-5 py-3 text-xs w-full space-y-1">
           <div className="flex justify-between">
             <span className="text-slate-500">Sensors</span>
-            <span className="text-cyan-400 font-mono">{design.sensors.count}x</span>
+            <span className="text-teal-400 font-mono">{design.sensors.count}x</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-500">Range</span>
-            <span className="text-cyan-400 font-mono">{design.sensors.range}px</span>
+            <span className="text-teal-400 font-mono">{design.sensors.range}px</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-500">FOV</span>
-            <span className="text-cyan-400 font-mono">{design.sensors.fov}°</span>
+            <span className="text-teal-400 font-mono">{design.sensors.fov}°</span>
           </div>
           <div className="flex justify-between">
             <span className="text-slate-500">Speed</span>
-            <span className="text-cyan-400 font-mono">{design.speed}px/s</span>
+            <span className="text-teal-400 font-mono">{design.speed}px/s</span>
           </div>
         </div>
       </div>
@@ -331,8 +331,8 @@ export const RobotDesigner = ({ design, onChange }: RobotDesignerProps) => {
             Project name
           </label>
           <input
-            className="w-full bg-night-900 border border-night-700 rounded-xl px-4 py-2.5
-                       text-slate-100 text-sm focus:outline-none focus:border-cyan-500 transition-colors"
+            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5
+                       text-slate-100 text-sm focus:outline-none focus:border-teal-500 transition-colors"
             placeholder="e.g. Warehouse Navigator"
             value={design.name}
             onChange={(e) => set({ name: e.target.value })}
@@ -352,8 +352,8 @@ export const RobotDesigner = ({ design, onChange }: RobotDesignerProps) => {
                 onClick={() => set({ shape: s.key })}
                 className={`flex flex-col items-center gap-1 p-2 rounded-xl border text-xs transition-all
                   ${design.shape === s.key
-                    ? "border-cyan-500 bg-cyan-500/10 text-cyan-300"
-                    : "border-night-700 bg-night-900 text-slate-400 hover:border-slate-600"}`}
+                    ? "border-teal-500 bg-teal-500/10 text-teal-300"
+                    : "border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-600"}`}
               >
                 <span className="text-lg">{s.icon}</span>
                 <span className="truncate">{s.label}</span>
@@ -375,7 +375,7 @@ export const RobotDesigner = ({ design, onChange }: RobotDesignerProps) => {
                 className={`flex gap-3 items-start p-3 rounded-xl border text-left transition-all
                   ${design.movementType === m.key
                     ? "border-emerald-500 bg-emerald-500/10"
-                    : "border-night-700 bg-night-900 hover:border-slate-600"}`}
+                    : "border-slate-800 bg-slate-950 hover:border-slate-600"}`}
               >
                 <span className="text-xl mt-0.5 flex-shrink-0">{m.icon}</span>
                 <div className="min-w-0">
@@ -393,15 +393,15 @@ export const RobotDesigner = ({ design, onChange }: RobotDesignerProps) => {
         <div className="grid grid-cols-3 gap-4">
           <div>
             <label className="block text-xs text-slate-400 mb-1">
-              Size <span className="text-cyan-400 font-mono">{design.size}px</span>
+              Size <span className="text-teal-400 font-mono">{design.size}px</span>
             </label>
             <input type="range" min={8} max={30} value={design.size}
               onChange={(e) => set({ size: Number(e.target.value) })}
-              className="w-full accent-cyan-500" />
+              className="w-full accent-teal-500" />
           </div>
           <div>
             <label className="block text-xs text-slate-400 mb-1">
-              Speed <span className="text-cyan-400 font-mono">{design.speed}</span>
+              Speed <span className="text-teal-400 font-mono">{design.speed}</span>
             </label>
             <input type="range" min={60} max={250} step={10} value={design.speed}
               onChange={(e) => set({ speed: Number(e.target.value) })}
@@ -409,11 +409,11 @@ export const RobotDesigner = ({ design, onChange }: RobotDesignerProps) => {
           </div>
           <div>
             <label className="block text-xs text-slate-400 mb-1">
-              Turn rate <span className="text-cyan-400 font-mono">{design.turnRate}°</span>
+              Turn rate <span className="text-teal-400 font-mono">{design.turnRate}°</span>
             </label>
             <input type="range" min={4} max={30} value={design.turnRate}
               onChange={(e) => set({ turnRate: Number(e.target.value) })}
-              className="w-full accent-violet-500" />
+              className="w-full accent-amber-500" />
           </div>
         </div>
 
@@ -422,7 +422,7 @@ export const RobotDesigner = ({ design, onChange }: RobotDesignerProps) => {
           <label className="block text-xs font-semibold text-slate-300 mb-2 uppercase tracking-wider">
             Sensors
           </label>
-          <div className="bg-night-900 border border-night-700 rounded-xl p-4 space-y-4">
+          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-4">
             {/* Sensor placement */}
             <div>
               <div className="text-xs text-slate-400 mb-2">Placement pattern</div>
@@ -442,8 +442,8 @@ export const RobotDesigner = ({ design, onChange }: RobotDesignerProps) => {
                     onClick={() => setSensors({ placement: p.key, fov: p.key === "360" ? 360 : p.key === "front_rear" ? 240 : p.key === "front_sides" ? 150 : p.key === "sides" ? 180 : p.key === "front" ? 90 : 120 })}
                     className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-all
                       ${design.sensors.placement === p.key
-                        ? "border-cyan-500 bg-cyan-500/10 text-cyan-200"
-                        : "border-night-700 text-slate-400 hover:border-slate-600"}`}
+                        ? "border-teal-500 bg-teal-500/10 text-teal-200"
+                        : "border-slate-800 text-slate-400 hover:border-slate-600"}`}
                   >
                     <span>{p.icon}</span>
                     <span className="leading-tight text-center">{p.label}</span>
@@ -456,15 +456,15 @@ export const RobotDesigner = ({ design, onChange }: RobotDesignerProps) => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs text-slate-400 mb-1">
-                  Sensor count <span className="text-cyan-400 font-mono">{design.sensors.count}</span>
+                  Sensor count <span className="text-teal-400 font-mono">{design.sensors.count}</span>
                 </label>
                 <input type="range" min={2} max={24} value={design.sensors.count}
                   onChange={(e) => setSensors({ count: Number(e.target.value) })}
-                  className="w-full accent-cyan-500" />
+                  className="w-full accent-teal-500" />
               </div>
               <div>
                 <label className="block text-xs text-slate-400 mb-1">
-                  Range <span className="text-cyan-400 font-mono">{design.sensors.range}px</span>
+                  Range <span className="text-teal-400 font-mono">{design.sensors.range}px</span>
                 </label>
                 <input type="range" min={60} max={300} step={10} value={design.sensors.range}
                   onChange={(e) => setSensors({ range: Number(e.target.value) })}
@@ -517,3 +517,4 @@ export function robotDesignToEnvConfig(d: RobotDesign): Record<string, unknown> 
     },
   };
 }
+

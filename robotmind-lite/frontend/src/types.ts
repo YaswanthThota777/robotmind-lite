@@ -64,6 +64,8 @@ export type Project = {
   algorithm: string;
   modelProfile: string;
   steps: number;
+  memoryMode?: string;
+  goalRandomize?: boolean;
   customEnvironmentJson?: string;
 };
 
@@ -97,6 +99,8 @@ export type TrainingConfig = {
   algorithm: string;
   environmentProfile: string;
   modelProfile: string;
+  memoryMode?: string;
+  goalRandomize?: boolean;
   templateKey?: string;
 };
 
@@ -161,7 +165,9 @@ export type TrainingStatus = {
 
 export type SensorValue = {
   index: number;
-  distance: number;
+  distance: number;   // normalized [0, 1]; 1.0 = nothing detected within range
+  angle?: number;     // robot-relative angle in degrees (0=front, 90=right)
+  label?: string;     // e.g. "Front", "Right", "Rear-Left"
 };
 
 export type SimulationVisual = {
@@ -193,7 +199,13 @@ export type SimulationState = {
   ray_count?: number;
   ray_length?: number;
   ray_fov_degrees?: number;
+  /** Present when backend uses fixed-angle sensors instead of FOV fan mode.
+   *  Each value is the absolute world-space angle of that sensor in degrees. */
+  sensor_angles_abs?: number[] | null;
+  /** Human-readable label for each fixed-angle sensor (matches sensor_angles_abs by index). */
+  sensor_angle_labels?: string[] | null;
   goal_x?: number | null;
   goal_y?: number | null;
   goal_radius?: number | null;
 };
+

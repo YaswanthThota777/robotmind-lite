@@ -68,8 +68,8 @@ export const WelcomeScreen = ({ onDismiss }: WelcomeScreenProps) => {
   const isLast = currentStep === steps.length - 1;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-night-900/90 backdrop-blur-sm">
-      <div className="relative w-full max-w-2xl rounded-2xl border border-night-600 bg-gradient-to-br from-night-800 to-night-900 p-8 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm">
+      <div className="relative w-full max-w-2xl rounded-2xl border border-slate-700 bg-gradient-to-br from-slate-900 to-slate-950 p-8 shadow-2xl">
         <button
           onClick={onDismiss}
           className="absolute top-4 right-4 text-2xl text-slate-400 hover:text-slate-200 transition"
@@ -87,7 +87,7 @@ export const WelcomeScreen = ({ onDismiss }: WelcomeScreenProps) => {
           {step.content.map((item, index) => (
             <div
               key={index}
-              className="rounded-lg border border-night-600 bg-night-900/60 px-4 py-3 text-sm text-slate-300"
+              className="rounded-lg border border-slate-700 bg-slate-950/60 px-4 py-3 text-sm text-slate-300"
             >
               {item}
             </div>
@@ -100,7 +100,7 @@ export const WelcomeScreen = ({ onDismiss }: WelcomeScreenProps) => {
               <div
                 key={index}
                 className={`h-2 w-2 rounded-full transition ${
-                  index === currentStep ? "bg-emerald-400 w-6" : "bg-night-600"
+                  index === currentStep ? "bg-emerald-400 w-6" : "bg-slate-700"
                 }`}
               />
             ))}
@@ -110,7 +110,7 @@ export const WelcomeScreen = ({ onDismiss }: WelcomeScreenProps) => {
             {currentStep > 0 && (
               <button
                 onClick={() => setCurrentStep(currentStep - 1)}
-                className="rounded-lg border border-night-600 bg-night-800 px-4 py-2 text-sm text-slate-300 hover:bg-night-700 transition"
+                className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 transition"
               >
                 ← Back
               </button>
@@ -133,3 +133,4 @@ export const WelcomeScreen = ({ onDismiss }: WelcomeScreenProps) => {
     </div>
   );
 };
+

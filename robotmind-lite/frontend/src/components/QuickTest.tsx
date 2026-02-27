@@ -45,6 +45,16 @@ interface QuickTestProps {
   onClose: () => void;
 }
 
+type RunOption = {
+  run_id: number;
+  algorithm: string;
+  status: string;
+  total_steps: number;
+  memory_mode?: string;
+  goal_randomize?: boolean | null;
+  environment_profile?: string;
+};
+
 export const QuickTest = ({
   apiBase,
   runId: initialRunId,
@@ -57,7 +67,7 @@ export const QuickTest = ({
   onClose,
 }: QuickTestProps) => {
   // ── run picker ──────────────────────────────────────────────────────────
-  const [runs, setRuns] = useState<{ run_id: number; algorithm: string; status: string; total_steps: number }[]>([]);
+  const [runs, setRuns] = useState<RunOption[]>([]);
   const [runId, setRunId] = useState<number | null>(initialRunId ?? null);
 
   // ── env selection ───────────────────────────────────────────────────────
@@ -73,6 +83,8 @@ export const QuickTest = ({
   const [episodes, setEpisodes] = useState(5);
   const [deterministic, setDeterministic] = useState(false);
   const [maxSteps, setMaxSteps] = useState(1000);
+  const [memoryMode, setMemoryMode] = useState<"standard" | "visited_grid">("standard");
+  const [goalRandomize, setGoalRandomize] = useState(true);
 
   // ── selected env summary (for minimap) ───────────────────────────────────
   const [selectedEnvSummary, setSelectedEnvSummary] = useState<WorldSummary | null>(null);
@@ -140,6 +152,9 @@ export const QuickTest = ({
             algorithm: r.algorithm || "?",
             status: r.status || "?",
             total_steps: r.total_steps ?? r.steps ?? 0,
+            memory_mode: r.memory_mode ?? "standard",
+            goal_randomize: r.goal_randomize ?? null,
+            environment_profile: r.environment_profile ?? r.environment ?? "",
           }));
           setRuns(normalized);
           // auto-select the latest completed run if none pre-filled
@@ -152,6 +167,24 @@ export const QuickTest = ({
     };
     load();
   }, [apiBase]);
+
+  useEffect(() => {
+    if (!runId) return;
+    const run = runs.find((r) => r.run_id === runId);
+    if (!run) return;
+    if (run.memory_mode === "visited_grid" || run.memory_mode === "standard") {
+      setMemoryMode(run.memory_mode);
+    }
+    if (typeof run.goal_randomize === "boolean") {
+      setGoalRandomize(run.goal_randomize);
+    }
+  }, [runId, runs]);
+
+  useEffect(() => {
+    if (!selectedEnvSummary?.has_goal) {
+      setGoalRandomize(false);
+    }
+  }, [selectedEnvSummary?.has_goal]);
 
   // ── run the test ─────────────────────────────────────────────────────────
   const runTest = async () => {
@@ -171,6 +204,7 @@ export const QuickTest = ({
     }
 
     try {
+      const goalRandomizeValue = selectedEnvSummary?.has_goal ? goalRandomize : undefined;
       const res = await fetch(`${apiBase}/test-model`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -183,6 +217,8 @@ export const QuickTest = ({
           record_trajectory: true,
           record_episode: 0,
           frame_skip: 1,
+          memory_mode: memoryMode,
+          ...(goalRandomizeValue !== undefined ? { goal_randomize: goalRandomizeValue } : {}),
           ...(customEnvironment ? { custom_environment: customEnvironment } : {}),
         }),
       });
@@ -237,6 +273,7 @@ export const QuickTest = ({
           run_id: runId,
           steps: ftSteps,
           environment_profile: envProfile,
+          memory_mode: memoryMode,
           ...(customEnvironment ? { custom_environment: customEnvironment } : {}),
         }),
       });
@@ -255,7 +292,7 @@ export const QuickTest = ({
   };
 
   const rewardColor = (v: number) =>
-    v > 5 ? "text-emerald-300" : v > 0 ? "text-cyan-300" : "text-red-300";
+    v > 5 ? "text-emerald-300" : v > 0 ? "text-teal-300" : "text-red-300";
 
   return (
     <>
@@ -263,12 +300,12 @@ export const QuickTest = ({
         className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 backdrop-blur-sm"
         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       >
-        <div className={`w-[96vw] max-h-[92vh] flex flex-col
-                        bg-night-900 border border-night-700 rounded-2xl shadow-2xl overflow-hidden
-                        transition-all duration-300 ${showSim ? "max-w-5xl" : "max-w-3xl"}`}>
+        <div className={`w-[96vw] max-h-[92vh] flex flex-col rm-fade-up
+            bg-[#0b1120] border border-slate-800/70 rounded-3xl shadow-2xl overflow-hidden
+            transition-all duration-300 ${showSim ? "max-w-6xl" : "max-w-4xl"}`}>
 
           {/* ── Header ── */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-night-700 bg-night-800/80 flex-shrink-0">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800/70 bg-[#0b1120]/85 flex-shrink-0">
             <div>
               <div className="font-bold text-slate-100 text-base">🧪 Test Trained Model</div>
               <div className="text-xs text-slate-400 mt-0.5">
@@ -277,22 +314,22 @@ export const QuickTest = ({
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-night-700 hover:bg-night-600 text-slate-300 text-sm flex items-center justify-center"
+              className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm flex items-center justify-center"
             >✕</button>
           </div>
 
           <div className={`flex-1 flex overflow-hidden min-h-0 ${showSim ? "flex-row" : "flex-col"}`}>
             {/* Config + Results panel */}
-            <div className={`overflow-y-auto p-4 space-y-4 ${showSim ? "w-[380px] flex-shrink-0 border-r border-night-700" : "flex-1"}`}>
+            <div className={`overflow-y-auto p-4 space-y-4 ${showSim ? "w-[420px] flex-shrink-0 border-r border-slate-800/70" : "flex-1"}`}>
 
             {/* ── Model Run Selector ── */}
-            <div className="rounded-xl border border-night-700 bg-night-800/50 p-3">
+            <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-3">
               <div className="text-xs text-slate-400 mb-2 font-medium uppercase tracking-widest">Model</div>
               <select
                 value={runId ?? ""}
                 onChange={(e) => setRunId(Number(e.target.value))}
-                className="w-full rounded-lg border border-night-600 bg-night-900 px-3 py-2
-                           text-sm text-slate-200 focus:border-cyan-500 focus:outline-none"
+                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2
+                           text-sm text-slate-200 focus:border-teal-500 focus:outline-none"
               >
                 <option value="">— Select a trained run —</option>
                 {runs.filter((r) => r.status === "completed").map((r) => (
@@ -309,7 +346,7 @@ export const QuickTest = ({
             </div>
 
             {/* ── Environment Selector ── */}
-            <div className="rounded-xl border border-night-700 bg-night-800/50 p-3 space-y-2">
+            <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-3 space-y-2">
               <div className="flex items-center">
                 <div className="text-xs text-slate-400 font-medium uppercase tracking-widest flex-1">
                   Test Environment
@@ -317,15 +354,15 @@ export const QuickTest = ({
                 <div className="flex gap-1.5">
                   <button
                     onClick={() => setShowTemplates(true)}
-                    className="text-xs px-2 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30
-                               text-cyan-400 hover:bg-cyan-500/20 transition-colors"
+                    className="text-xs px-2 py-1.5 rounded-lg bg-teal-500/10 border border-teal-500/30
+                               text-teal-400 hover:bg-teal-500/20 transition-colors"
                   >
                     🗂️ Templates
                   </button>
                   <button
                     onClick={() => setShowBuilder(true)}
-                    className="text-xs px-2 py-1.5 rounded-lg bg-purple-500/10 border border-purple-500/30
-                               text-purple-400 hover:bg-purple-500/20 transition-colors"
+                    className="text-xs px-2 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30
+                               text-amber-300 hover:bg-amber-500/20 transition-colors"
                   >
                     🛠️ Build
                   </button>
@@ -333,9 +370,9 @@ export const QuickTest = ({
               </div>
 
               {/* Current env display */}
-              <div className="flex items-center gap-2 rounded-lg border border-night-600 bg-night-900 px-3 py-2">
+              <div className="flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950 px-3 py-2">
                 {selectedEnvSummary && (
-                  <div className="flex-shrink-0 rounded overflow-hidden border border-night-600">
+                  <div className="flex-shrink-0 rounded overflow-hidden border border-slate-700">
                     <EnvMinimap world={selectedEnvSummary} size={56} />
                   </div>
                 )}
@@ -354,7 +391,7 @@ export const QuickTest = ({
                     setEnvLabel(found?.label ?? e.target.value.replaceAll("_", " "));
                     if (found?.world_summary) setSelectedEnvSummary(found.world_summary);
                   }}
-                  className="text-xs bg-night-800 border border-night-600 rounded px-2 py-1.5
+                  className="text-xs bg-slate-900 border border-slate-700 rounded px-2 py-1.5
                              text-slate-300 focus:outline-none max-w-[140px]"
                 >
                   {envProfiles.map((e) => (
@@ -377,8 +414,8 @@ export const QuickTest = ({
                     onChange={(e) => setCustomJson(e.target.value)}
                     rows={5}
                     placeholder='{"world": {"obstacles": [...], "goal": {"x": 500, "y": 400, "radius": 20}}}'
-                    className="w-full rounded-lg border border-night-600 bg-night-900 p-2.5 text-xs
-                               font-mono text-slate-300 focus:border-cyan-500 focus:outline-none resize-none"
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 p-2.5 text-xs
+                               font-mono text-slate-300 focus:border-teal-500 focus:outline-none resize-none"
                   />
                   <div className="text-xs text-slate-600 mt-0.5">
                     Overrides the selected environment. Useful for custom mazes / goal placement.
@@ -388,36 +425,67 @@ export const QuickTest = ({
             </div>
 
             {/* ── Test Config ── */}
-            <div className="rounded-xl border border-night-700 bg-night-800/50 p-3">
+            <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-3">
               <div className="text-xs text-slate-400 mb-2 font-medium uppercase tracking-widest">Options</div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-slate-400 block mb-1">
-                    Episodes <span className="text-cyan-300 font-mono">{episodes}</span>
+                    Episodes <span className="text-teal-300 font-mono">{episodes}</span>
                   </label>
                   <input
                     type="range" min={1} max={20} value={episodes}
                     onChange={(e) => setEpisodes(Number(e.target.value))}
-                    className="w-full accent-cyan-500"
+                    className="w-full accent-teal-500"
                   />
                 </div>
                 <div>
                   <label className="text-xs text-slate-400 block mb-1">
-                    Max steps/ep <span className="text-cyan-300 font-mono">{maxSteps.toLocaleString()}</span>
+                    Max steps/ep <span className="text-teal-300 font-mono">{maxSteps.toLocaleString()}</span>
                   </label>
                   <input
                     type="range" min={100} max={5000} step={100} value={maxSteps}
                     onChange={(e) => setMaxSteps(Number(e.target.value))}
-                    className="w-full accent-cyan-500"
+                    className="w-full accent-teal-500"
                   />
                 </div>
+                <div className="col-span-2">
+                  <label className="text-xs text-slate-400 block mb-1">Memory Mode</label>
+                  <select
+                    value={memoryMode}
+                    onChange={(e) => setMemoryMode(e.target.value as "standard" | "visited_grid")}
+                    className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2
+                               text-xs text-slate-200 focus:border-teal-500 focus:outline-none"
+                  >
+                    <option value="standard">Standard (no memory)</option>
+                    <option value="visited_grid">Visited Grid (spatial memory)</option>
+                  </select>
+                  <div className="text-xs text-slate-600 mt-1">
+                    Adds a lightweight map of explored space to help exploration.
+                  </div>
+                </div>
+                {selectedEnvSummary?.has_goal && (
+                  <div className="col-span-2 flex flex-col justify-center">
+                    <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={goalRandomize}
+                        onChange={(e) => setGoalRandomize(e.target.checked)}
+                        className="accent-teal-500"
+                      />
+                      Randomize goal each episode
+                    </label>
+                    <div className="text-xs text-slate-600 mt-1">
+                      Useful for generalization; turn off for fixed-target navigation.
+                    </div>
+                  </div>
+                )}
                 <div className="col-span-2 flex flex-col justify-center">
                   <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={deterministic}
                       onChange={(e) => setDeterministic(e.target.checked)}
-                      className="accent-cyan-500"
+                      className="accent-teal-500"
                     />
                     Deterministic policy
                   </label>
@@ -448,28 +516,28 @@ export const QuickTest = ({
 
             {/* ── Results ── */}
             {result && (
-              <div ref={resultRef} className="rounded-xl border border-night-700 bg-night-800/50 p-3 space-y-3">
+              <div ref={resultRef} className="rounded-xl border border-slate-800 bg-slate-900/50 p-3 space-y-3">
                 <div className="text-xs text-slate-400 font-medium uppercase tracking-widest">Results</div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="rounded-lg bg-night-900 border border-night-700 p-2.5 text-center">
+                  <div className="rounded-lg bg-slate-950 border border-slate-800 p-2.5 text-center">
                     <div className="text-xs text-slate-500 mb-0.5">Avg Reward</div>
                     <div className={`text-xl font-bold tabular-nums ${rewardColor(result.avg_reward)}`}>
                       {result.avg_reward > 0 ? "+" : ""}{result.avg_reward.toFixed(1)}
                     </div>
                   </div>
-                  <div className="rounded-lg bg-night-900 border border-night-700 p-2.5 text-center">
+                  <div className="rounded-lg bg-slate-950 border border-slate-800 p-2.5 text-center">
                     <div className="text-xs text-slate-500 mb-0.5">Avg Steps</div>
-                    <div className="text-xl font-bold text-cyan-300 tabular-nums">
+                    <div className="text-xl font-bold text-teal-300 tabular-nums">
                       {result.avg_steps.toFixed(0)}
                     </div>
                   </div>
-                  <div className="rounded-lg bg-night-900 border border-night-700 p-2.5 text-center">
+                  <div className="rounded-lg bg-slate-950 border border-slate-800 p-2.5 text-center">
                     <div className="text-xs text-slate-500 mb-0.5">Collision Rate</div>
                     <div className={`text-xl font-bold tabular-nums ${result.collision_rate > 0.5 ? "text-red-300" : result.collision_rate > 0.2 ? "text-amber-300" : "text-emerald-300"}`}>
                       {(result.collision_rate * 100).toFixed(0)}%
                     </div>
                   </div>
-                  <div className="rounded-lg bg-night-900 border border-night-700 p-2.5 text-center">
+                  <div className="rounded-lg bg-slate-950 border border-slate-800 p-2.5 text-center">
                     <div className="text-xs text-slate-500 mb-0.5">
                       {result.goal_reach_rate != null ? "Goal Reach Rate" : "Success Rate"}
                     </div>
@@ -506,7 +574,7 @@ export const QuickTest = ({
                     <button
                       onClick={() => { setPlayIndex(0); setPlayPlaying(true); setShowSim(true); }}
                       className="flex-1 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r
-                                 from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500
+                                 from-teal-600 to-blue-600 hover:from-teal-500 hover:to-blue-500
                                  text-white transition-all"
                     >
                       {playPlaying ? "↺ Restart" : showSim ? "▶ Replay" : "▶ Show Simulation"}
@@ -514,8 +582,8 @@ export const QuickTest = ({
                     {playPlaying && (
                       <button
                         onClick={() => setPlayPlaying(false)}
-                        className="px-4 py-2 rounded-lg text-xs font-semibold border border-night-600
-                                   bg-night-800 text-slate-300 hover:text-white transition-colors"
+                        className="px-4 py-2 rounded-lg text-xs font-semibold border border-slate-700
+                                   bg-slate-900 text-slate-300 hover:text-white transition-colors"
                       >
                         ⏸
                       </button>
@@ -523,8 +591,8 @@ export const QuickTest = ({
                     {showSim && (
                       <button
                         onClick={() => setShowSim(false)}
-                        className="px-3 py-2 rounded-lg text-xs border border-night-600
-                                   bg-night-800 text-slate-400 hover:text-slate-200 transition-colors"
+                        className="px-3 py-2 rounded-lg text-xs border border-slate-700
+                                   bg-slate-900 text-slate-400 hover:text-slate-200 transition-colors"
                       >
                         ✕ Hide
                       </button>
@@ -535,8 +603,8 @@ export const QuickTest = ({
             )}
 
             {/* ── Fine-tune (Online Learning) ── */}
-            <div className="rounded-xl border border-violet-700/50 bg-violet-900/10 p-3">
-              <div className="text-xs text-violet-300 mb-1 font-medium uppercase tracking-widest">
+            <div className="rounded-xl border border-teal-600/40 bg-teal-900/10 p-3">
+              <div className="text-xs text-teal-300 mb-1 font-medium uppercase tracking-widest">
                 🧠 Continue Training (Fine-tune)
               </div>
               <div className="text-xs text-slate-500 mb-2">
@@ -544,13 +612,13 @@ export const QuickTest = ({
                 Updates the model in-place — run Test again to see improvement.
               </div>
               <div className="mb-2">
-                <label className="text-xs text-slate-400 block mb-1">
-                  Extra steps <span className="text-violet-300 font-mono font-bold">{ftSteps.toLocaleString()}</span>
+                  <label className="text-xs text-slate-400 block mb-1">
+                  Extra steps <span className="text-teal-300 font-mono font-bold">{ftSteps.toLocaleString()}</span>
                 </label>
                 <input
                   type="range" min={1000} max={200_000} step={1000} value={ftSteps}
                   onChange={(e) => setFtSteps(Number(e.target.value))}
-                  className="w-full accent-violet-500"
+                  className="w-full accent-teal-500"
                 />
                 <div className="flex justify-between text-xs text-slate-600 mt-0.5">
                   <span>1k</span><span>50k</span><span>100k</span><span>200k</span>
@@ -569,8 +637,8 @@ export const QuickTest = ({
                 onClick={runFineTune}
                 disabled={ftLoading || !runId}
                 className="w-full py-2 rounded-lg text-xs font-semibold
-                           bg-gradient-to-r from-violet-600 to-purple-600
-                           hover:from-violet-500 hover:to-purple-500
+                           bg-gradient-to-r from-teal-500 to-amber-500
+                           hover:from-teal-400 hover:to-amber-400
                            disabled:opacity-50 disabled:cursor-not-allowed
                            text-white transition-all"
               >
@@ -584,8 +652,8 @@ export const QuickTest = ({
 
             {/* ── Inline Simulation Panel ── */}
             {showSim && playFrames && (
-              <div className="flex-1 flex flex-col overflow-hidden bg-night-950/50">
-                <div className="flex items-center justify-between px-3 py-2 border-b border-night-700 flex-shrink-0">
+              <div className="flex-1 flex flex-col overflow-hidden bg-[#0b1120]/70">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800/70 flex-shrink-0">
                   <div className="flex items-center gap-2">
                     <div className={`w-1.5 h-1.5 rounded-full ${playPlaying ? "bg-emerald-400 animate-pulse" : "bg-slate-500"}`} />
                     <span className="text-xs text-slate-400 font-medium">
@@ -601,28 +669,30 @@ export const QuickTest = ({
                   <div className="flex gap-1">
                     <button
                       onClick={() => { setPlayIndex(0); setPlayPlaying(true); }}
-                      className="text-xs px-2.5 py-1.5 rounded bg-night-700 text-slate-300 hover:bg-night-600"
+                      className="text-xs px-2.5 py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700"
                     >
                       ↺
                     </button>
                     <button
                       onClick={() => setPlayPlaying((p) => !p)}
-                      className="text-xs px-2.5 py-1.5 rounded bg-night-700 text-slate-300 hover:bg-night-600"
+                      className="text-xs px-2.5 py-1.5 rounded bg-slate-800 text-slate-300 hover:bg-slate-700"
                     >
                       {playPlaying ? "⏸" : "▶"}
                     </button>
                   </div>
                 </div>
-                <div className="flex-1 overflow-hidden p-2">
-                  <SimulationCanvas
-                    onSensors={() => {}}
-                    apiBase={apiBase}
-                    environmentProfile={envProfile}
-                    isTrainingActive={false}
-                    isTestMode={true}
-                    testState={playFrames[playIndex]}
-                    projectRobot={projectRobot}
-                  />
+                <div className="flex-1 overflow-hidden p-4">
+                  <div className="h-full rounded-2xl border border-slate-800/70 bg-[#0b1120]/80 shadow-2xl shadow-black/40 overflow-hidden">
+                    <SimulationCanvas
+                      onSensors={() => {}}
+                      apiBase={apiBase}
+                      environmentProfile={envProfile}
+                      isTrainingActive={false}
+                      isTestMode={true}
+                      testState={playFrames[playIndex]}
+                      projectRobot={projectRobot}
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -630,14 +700,14 @@ export const QuickTest = ({
 
           {/* ── Footer ── */}
           <div className="flex-shrink-0 flex items-center justify-between px-4 py-3
-                          border-t border-night-700 bg-night-800/60">
+                          border-t border-slate-800/70 bg-[#0b1120]/85">
             <div className="text-xs text-slate-500">
               {runId ? `Run #${runId} · ${envLabel}` : "Select a run to test"}
             </div>
             <div className="flex gap-2">
               <button
                 onClick={onClose}
-                className="px-3 py-2 rounded-lg text-xs border border-night-600 text-slate-400 hover:text-slate-200"
+                className="px-3 py-2 rounded-lg text-xs border border-slate-700 text-slate-400 hover:text-slate-200"
               >
                 Close
               </button>
@@ -645,7 +715,7 @@ export const QuickTest = ({
                 onClick={runTest}
                 disabled={loading || !runId}
                 className="px-5 py-2 rounded-lg text-xs font-bold bg-gradient-to-r
-                           from-emerald-600 to-cyan-600 hover:from-emerald-500 hover:to-cyan-500
+                           from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500
                            text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
                 {loading ? (
@@ -690,3 +760,4 @@ export const QuickTest = ({
     </>
   );
 };
+

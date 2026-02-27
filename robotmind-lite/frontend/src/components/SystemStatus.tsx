@@ -31,13 +31,13 @@ export const SystemStatus = ({ isTraining, currentRun }: SystemStatusProps) => {
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/30">
           <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Algorithms</div>
-          <div className="text-base font-bold text-cyan-300">6</div>
+          <div className="text-base font-bold text-teal-300">6</div>
           <div className="text-xs text-slate-600 mt-0.5">PPO, DQN, SAC, A2C, TD3, DDPG</div>
         </div>
         
         <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/30">
           <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Environments</div>
-          <div className="text-base font-bold text-purple-300">3</div>
+          <div className="text-base font-bold text-amber-300">3</div>
           <div className="text-xs text-slate-600 mt-0.5">V1 Flat-Ground Profiles</div>
         </div>
         
@@ -54,11 +54,11 @@ export const SystemStatus = ({ isTraining, currentRun }: SystemStatusProps) => {
           <div className="space-y-1 text-xs">
             <div className="flex justify-between">
               <span className="text-slate-400">Algorithm:</span>
-              <span className="text-cyan-300 font-medium">{currentRun.algorithm}</span>
+              <span className="text-teal-300 font-medium">{currentRun.algorithm}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-400">Environment:</span>
-              <span className="text-purple-300 font-medium text-xs">
+              <span className="text-amber-300 font-medium text-xs">
                 {currentRun.environment.replace(/_/g, ' ')}
               </span>
             </div>
@@ -72,3 +72,4 @@ export const SystemStatus = ({ isTraining, currentRun }: SystemStatusProps) => {
     </div>
   );
 };
+

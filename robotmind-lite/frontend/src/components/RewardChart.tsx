@@ -69,3 +69,4 @@ export const RewardChart = ({ data }: RewardChartProps) => {
 
   return <canvas ref={canvasRef} className="h-40 w-full" />;
 };
+

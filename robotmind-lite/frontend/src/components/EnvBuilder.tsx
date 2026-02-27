@@ -246,10 +246,10 @@ export const EnvBuilder = ({
       className="fixed inset-0 z-[90] flex items-center justify-center bg-black/75 backdrop-blur-sm"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="w-[96vw] max-w-[940px] bg-night-900 border border-night-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+      <div className="w-[96vw] max-w-[940px] bg-slate-950 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-night-700 bg-night-800/80">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/80">
           <div>
             <div className="font-bold text-slate-100 text-base">🛠️ Custom Environment Builder</div>
             <div className="text-xs text-slate-400 mt-0.5">
@@ -257,20 +257,20 @@ export const EnvBuilder = ({
             </div>
           </div>
           <button onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-night-700 hover:bg-night-600 text-slate-300 text-sm flex items-center justify-center">✕</button>
+            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm flex items-center justify-center">✕</button>
         </div>
 
         <div className="flex gap-0 overflow-hidden">
           {/* Left toolbar */}
-          <div className="w-52 bg-night-800/60 border-r border-night-700 p-4 flex flex-col gap-3 flex-shrink-0">
+          <div className="w-52 bg-slate-900/60 border-r border-slate-800 p-4 flex flex-col gap-3 flex-shrink-0">
             <div className="text-xs uppercase tracking-widest text-slate-500 mb-1">Tool</div>
             {(["obstacle", "goal", "erase"] as const).map((t) => (
               <button key={t}
                 onClick={() => setTool(t)}
                 className={`w-full py-2 rounded-lg text-xs font-medium transition-all text-left px-3 ${
                   tool === t
-                    ? "bg-cyan-500/20 border border-cyan-500/50 text-cyan-300"
-                    : "bg-night-700 border border-night-600 text-slate-400 hover:text-slate-200"
+                    ? "bg-teal-500/20 border border-teal-500/50 text-teal-300"
+                    : "bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200"
                 }`}
               >
                 {t === "obstacle" ? "📦 Draw Obstacle" : t === "goal" ? "⭐ Place Goal" : "🗑️ Erase"}
@@ -280,27 +280,27 @@ export const EnvBuilder = ({
             <div className="text-xs uppercase tracking-widest text-slate-500 mt-2">World</div>
             <div>
               <label className="text-xs text-slate-400 block mb-1">
-                Width <span className="text-cyan-300 font-mono">{worldW}</span>
+                Width <span className="text-teal-300 font-mono">{worldW}</span>
               </label>
               <input type="range" min={320} max={1200} step={20} value={worldW}
                 onChange={(e) => setWorldW(Number(e.target.value))}
-                className="w-full accent-cyan-500" />
+                className="w-full accent-teal-500" />
             </div>
             <div>
               <label className="text-xs text-slate-400 block mb-1">
-                Height <span className="text-cyan-300 font-mono">{worldH}</span>
+                Height <span className="text-teal-300 font-mono">{worldH}</span>
               </label>
               <input type="range" min={240} max={800} step={20} value={worldH}
                 onChange={(e) => setWorldH(Number(e.target.value))}
-                className="w-full accent-cyan-500" />
+                className="w-full accent-teal-500" />
             </div>
             <div>
               <label className="text-xs text-slate-400 block mb-1">
-                Wall margin <span className="text-cyan-300 font-mono">{wallMargin}</span>
+                Wall margin <span className="text-teal-300 font-mono">{wallMargin}</span>
               </label>
               <input type="range" min={10} max={60} step={5} value={wallMargin}
                 onChange={(e) => setWallMargin(Number(e.target.value))}
-                className="w-full accent-cyan-500" />
+                className="w-full accent-teal-500" />
             </div>
 
             <div className="text-xs uppercase tracking-widest text-slate-500 mt-2">Actions</div>
@@ -311,7 +311,7 @@ export const EnvBuilder = ({
               </button>
             )}
             <button onClick={() => { setObstacles([]); setGoal(null); }}
-              className="w-full py-1.5 rounded-lg text-xs font-medium bg-night-700 border border-night-600 text-slate-400 hover:text-slate-200">
+              className="w-full py-1.5 rounded-lg text-xs font-medium bg-slate-800 border border-slate-700 text-slate-400 hover:text-slate-200">
               🧹 Clear All
             </button>
             <div className="text-xs text-slate-600 mt-1">
@@ -321,12 +321,12 @@ export const EnvBuilder = ({
           </div>
 
           {/* Canvas */}
-          <div className="flex-1 flex items-center justify-center bg-night-950 p-3">
+          <div className="flex-1 flex items-center justify-center bg-slate-950 p-3">
             <canvas
               ref={canvasRef}
               width={CANVAS_W}
               height={CANVAS_H}
-              className="rounded-xl border border-night-700"
+              className="rounded-xl border border-slate-800"
               style={{ cursor: tool === "erase" ? "not-allowed" : tool === "goal" ? "crosshair" : "crosshair" }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
@@ -344,18 +344,18 @@ export const EnvBuilder = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-night-700 bg-night-800/80">
+        <div className="flex items-center justify-between px-5 py-3 border-t border-slate-800 bg-slate-900/80">
           <div className="text-xs text-slate-500">
             Tip: Drag empty area to draw an obstacle. Right-click to delete. Click ⭐ tool then click to place goal.
           </div>
           <div className="flex gap-2">
             <button onClick={onClose}
-              className="px-4 py-2 rounded-lg text-xs border border-night-600 text-slate-400 hover:text-slate-200">
+              className="px-4 py-2 rounded-lg text-xs border border-slate-700 text-slate-400 hover:text-slate-200">
               Cancel
             </button>
             <button onClick={handleExport}
-              className="px-4 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-cyan-600 to-blue-600
-                         hover:from-cyan-500 hover:to-blue-500 text-white transition-all">
+              className="px-4 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-teal-600 to-blue-600
+                         hover:from-teal-500 hover:to-blue-500 text-white transition-all">
               ✅ Apply to Advanced JSON
             </button>
           </div>
@@ -364,3 +364,4 @@ export const EnvBuilder = ({
     </div>
   );
 };
+

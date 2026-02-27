@@ -10,7 +10,7 @@ from gymnasium import spaces
 
 from backend.simulation.presets import get_environment_profile
 from backend.simulation.robot import RobotConfig
-from backend.simulation.sensors import cast_rays
+from backend.simulation.sensors import cast_rays, cast_rays_at_angles, direction_label
 from backend.simulation.world import SimulationWorld
 
 
@@ -30,6 +30,77 @@ def _apply_forward_velocity(world: SimulationWorld, speed_scale: float = 1.0) ->
     vx = float(world.robot.body.velocity.x)
     vy = float(world.robot.body.velocity.y)
     world.robot.body.velocity = (vx * speed_scale, vy * speed_scale)
+
+
+class VisitedGridWrapper(gym.Wrapper):
+    """Adds a coarse visited-cell memory grid to the observation.
+
+    Also adds a small reward bonus for entering new cells to encourage
+    exploration instead of stopping/spinning in place.
+    """
+
+    def __init__(self, env: gym.Env, grid_size: int = 6) -> None:
+        super().__init__(env)
+        self.grid_size = max(3, int(grid_size))
+        self._visited = np.zeros((self.grid_size, self.grid_size), dtype=np.float32)
+
+        base_low = np.asarray(self.observation_space.low, dtype=np.float32)
+        base_high = np.asarray(self.observation_space.high, dtype=np.float32)
+        extra_low = np.zeros(self.grid_size * self.grid_size, dtype=np.float32)
+        extra_high = np.ones(self.grid_size * self.grid_size, dtype=np.float32)
+        self.observation_space = spaces.Box(
+            low=np.concatenate([base_low, extra_low]),
+            high=np.concatenate([base_high, extra_high]),
+            dtype=np.float32,
+        )
+
+    def _cell_for_position(self) -> tuple[int, int] | None:
+        if hasattr(self.env, "get_state"):
+            state = self.env.get_state()  # type: ignore[attr-defined]
+            try:
+                x = float(state.get("x", 0.0))
+                y = float(state.get("y", 0.0))
+                w = float(state.get("world_width", 0.0))
+                h = float(state.get("world_height", 0.0))
+            except Exception:
+                return None
+        else:
+            return None
+
+        if w <= 0 or h <= 0:
+            return None
+        gx = int(np.clip((x / w) * self.grid_size, 0, self.grid_size - 1))
+        gy = int(np.clip((y / h) * self.grid_size, 0, self.grid_size - 1))
+        return gx, gy
+
+    def _mark_and_bonus(self) -> float:
+        cell = self._cell_for_position()
+        if cell is None:
+            return 0.0
+        gx, gy = cell
+        if self._visited[gy, gx] < 0.5:
+            self._visited[gy, gx] = 1.0
+            return 0.02
+        return -0.003
+
+    def _augment_obs(self, obs: np.ndarray) -> np.ndarray:
+        return np.concatenate([np.asarray(obs, dtype=np.float32), self._visited.flatten()])
+
+    def get_state(self) -> dict[str, Any]:  # type: ignore[override]
+        if hasattr(self.env, "get_state"):
+            return self.env.get_state()  # type: ignore[attr-defined]
+        return {}
+
+    def reset(self, **kwargs: Any) -> tuple[np.ndarray, dict[str, Any]]:  # type: ignore[override]
+        obs, info = self.env.reset(**kwargs)
+        self._visited.fill(0.0)
+        self._mark_and_bonus()
+        return self._augment_obs(obs), info
+
+    def step(self, action: int) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:  # type: ignore[override]
+        obs, reward, terminated, truncated, info = self.env.step(action)
+        reward += self._mark_and_bonus()
+        return self._augment_obs(obs), reward, terminated, truncated, info
 
 
 class RobotEnv(gym.Env[np.ndarray, int]):
@@ -67,7 +138,16 @@ class RobotEnv(gym.Env[np.ndarray, int]):
         # Explicit max_steps arg overrides profile; profile overrides built-in default of 500
         _profile_max_steps = int(dynamics_cfg.get("max_steps", 500))
         self.max_steps = max_steps if max_steps is not None else _profile_max_steps
-        self.ray_count = max(ray_count, int(sensor_cfg["ray_count"]))
+        # Fixed-angle sensors: list of robot-relative offsets (degrees) defined in preset.
+        # Overrides ray_count / ray_fov_degrees when present.
+        raw_sensor_angles = sensor_cfg.get("sensor_angles")
+        self.sensor_angles: list[float] | None = (
+            [float(a) for a in raw_sensor_angles] if raw_sensor_angles else None
+        )
+        if self.sensor_angles is not None:
+            self.ray_count = len(self.sensor_angles)
+        else:
+            self.ray_count = max(ray_count, int(sensor_cfg["ray_count"]))
         self.ray_length = float(sensor_cfg["ray_length"])
         self.ray_fov_degrees = float(sensor_cfg["ray_fov_degrees"])
         self.sensor_noise_std = float(dynamics_cfg.get("sensor_noise_std", 0.0))
@@ -102,6 +182,9 @@ class RobotEnv(gym.Env[np.ndarray, int]):
         self.episode_count = 0
         self.last_reward = 0.0
         self.last_collision = False
+        self._consecutive_collisions = 0
+        self._last_x = 0.0
+        self._last_y = 0.0
         self._last_goal_dist = 0.0  # initialised properly on first reset()
 
         n_actions = 4 if self.reverse_enabled else 3
@@ -166,14 +249,23 @@ class RobotEnv(gym.Env[np.ndarray, int]):
         self.world.goal_y = self.world.height - margin
 
     def _get_observation(self) -> np.ndarray:
-        distances = cast_rays(
-            self.world.space,
-            (self.world.robot.x, self.world.robot.y),
-            self.world.robot.angle_degrees,
-            ray_count=self.ray_count,
-            ray_length=self.ray_length,
-            fov_degrees=self.ray_fov_degrees,
-        )
+        if self.sensor_angles is not None:
+            distances = cast_rays_at_angles(
+                self.world.space,
+                (self.world.robot.x, self.world.robot.y),
+                self.world.robot.angle_degrees,
+                self.sensor_angles,
+                self.ray_length,
+            )
+        else:
+            distances = cast_rays(
+                self.world.space,
+                (self.world.robot.x, self.world.robot.y),
+                self.world.robot.angle_degrees,
+                ray_count=self.ray_count,
+                ray_length=self.ray_length,
+                fov_degrees=self.ray_fov_degrees,
+            )
         if self.sensor_noise_std > 0:
             noise = self.np_random.normal(0.0, self.sensor_noise_std, size=len(distances))
             distances = [float(np.clip(dist + noise_val, 0.0, 1.0)) for dist, noise_val in zip(distances, noise)]
@@ -204,7 +296,12 @@ class RobotEnv(gym.Env[np.ndarray, int]):
         super().reset(seed=seed)
         self.current_step = 0
         self.episode_count += 1
-        self.world.reset()
+
+        # Randomise heading every episode — the single most important thing for
+        # spatial generalisation. Robot cannot memorise a fixed turn sequence.
+        random_heading = float(self.np_random.uniform(0.0, 360.0))
+        self.world.reset(angle_degrees=random_heading)
+
         # Spawn logic: fixed position > randomize > center (with overlap fallback)
         if self.randomize_spawn:
             self._random_spawn()
@@ -230,6 +327,7 @@ class RobotEnv(gym.Env[np.ndarray, int]):
             self._random_goal()
         self.last_reward = 0.0
         self.last_collision = False
+        self._consecutive_collisions = 0
         self._last_x = self.world.robot.x
         self._last_y = self.world.robot.y
         # Track distance to goal so step() can compute delta-distance reward
@@ -315,10 +413,12 @@ class RobotEnv(gym.Env[np.ndarray, int]):
         observation = self._get_observation()
 
         if collided:
-            # Moderate penalty — enough to deter collisions but not so large that
-            # the model becomes too fearful to explore open space.
-            reward = -25.0
+            self._consecutive_collisions += 1
+            # Strong collision penalty. Episode does NOT end on first hit —
+            # the agent must recover. Only terminate after 4 consecutive collisions.
+            reward = -40.0
         else:
+            self._consecutive_collisions = 0
             dx = self.world.robot.x - prev_x
             dy = self.world.robot.y - prev_y
             displacement = float(np.sqrt(dx * dx + dy * dy))
@@ -327,29 +427,38 @@ class RobotEnv(gym.Env[np.ndarray, int]):
             min_dist = float(np.min(ray_distances))
             mean_dist = float(np.mean(ray_distances))
 
-            # ── Base displacement reward ─────────────────────────────────────
-            # Moving through open space is rewarded.
-            # Rotating in place (differential drive) → displacement ≈ 0.
-            danger = min_dist < 0.5
-            if danger:
-                # In danger zone: no displacement bonus, scale down proximity penalty
-                reward = -0.005 - (0.5 - min_dist) * 3.0
+            # ── Per-step survival bonus ───────────────────────────────────────
+            # Staying alive is ALWAYS better than dying.  This small constant
+            # ensures the agent accumulates positive signal over a full episode
+            # (+5.0 over 500 steps) vs losing −40 per collision hit.
+            # Without this the agent has no incentive to survive past the point
+            # where avoidance becomes hard, so it just rushes forward.
+            reward = 0.01
+
+            # ── Proximity penalty — two-stage gradient ───────────────────────
+            # Stage 1 (warning): 0.45 < min_dist < 0.65 → mild negative gradient
+            # Stage 2 (danger):  min_dist <= 0.45        → strong negative gradient
+            danger = min_dist < 0.65
+            if min_dist <= 0.45:
+                # Deep danger zone — subtract on top of survival bonus (net negative)
+                reward += -0.02 - (0.45 - min_dist) * 5.0
+            elif min_dist < 0.65:
+                # Warning zone — moderate penalty; survival still slightly positive
+                reward += -0.005 - (0.65 - min_dist) * 1.2
             else:
-                # Displacement reward: ~+0.07 per forward step in open space
-                reward = displacement * 0.02 - 0.005
-                # Clearance bonus: encourage staying away from walls
+                # Clear space — reward forward movement
+                reward += displacement * 0.025
+                # Clearance bonus: encourage maintaining distance from walls
                 if min_dist > 0.7:
-                    reward += 0.02
-                # Strong open-space exploration bonus: when sensors are very clear
-                # (robot is in open space), reward forward motion more to prevent
-                # the model from spinning in place when nothing is visible.
+                    reward += 0.015
+                # Open-space exploration bonus: moving well in fully-open space
                 if mean_dist > 0.85 and displacement > 0.5:
-                    reward += 0.05
-                # Idle penalty: discourage stopping/spinning in wide open space.
+                    reward += 0.04
+                # Idle penalty: discourage stopping in open space (but not turning near walls)
                 if mean_dist > 0.85 and displacement < 0.3:
-                    reward -= 0.02
+                    reward -= 0.015
                     if action in {1, 2}:
-                        reward -= 0.01
+                        reward -= 0.008
 
             # ── Goal-directed rewards (only for goal environments) ────────────
             if self.has_goal:
@@ -359,11 +468,6 @@ class RobotEnv(gym.Env[np.ndarray, int]):
                 curr_y = self.world.robot.y
                 curr_dist = float(np.sqrt((curr_x - gx) ** 2 + (curr_y - gy) ** 2))
 
-                # Delta-distance reward: every pixel closer to the goal is rewarded.
-                # This creates a smooth gradient that guides the robot without it
-                # needing the sensors to "see" the goal.
-                # +0.3 per step getting closer (≈ 10 px/step → +3.0 on approach)
-                # -0.1 per step drifting further (mild penalty, not catastrophic)
                 delta = self._last_goal_dist - curr_dist  # positive = closer
                 if delta > 0:
                     reward += delta * 0.3
@@ -371,17 +475,28 @@ class RobotEnv(gym.Env[np.ndarray, int]):
                     reward += delta * 0.1  # softer penalty for moving away
                 self._last_goal_dist = curr_dist
 
-                # Goal-alignment bonus: reward facing the goal direction, even when
-                # rotating in place. This means the model learns to turn TOWARD the
-                # goal rather than spin randomly when sensors show clear space.
+                # Goal-alignment bonus: faces goal even when turning in place
                 goal_angle_rad = float(np.arctan2(gy - curr_y, gx - curr_x))
                 robot_angle_rad = float(np.deg2rad(self.world.robot.angle_degrees))
                 angle_diff = goal_angle_rad - robot_angle_rad
-                # Normalise to [-π, π]
                 angle_diff = float(np.arctan2(np.sin(angle_diff), np.cos(angle_diff)))
-                alignment = float(np.cos(angle_diff))  # 1.0 = facing goal, -1.0 = facing away
-                # Scale: +0.015 when perfectly aligned, -0.015 when facing away
-                reward += alignment * 0.015
+                alignment = float(np.cos(angle_diff))
+                reward += alignment * 0.025
+
+            # ── Anti-circling penalty (all envs) ─────────────────────────────
+            # Only penalise spinning-in-place when the robot is in SAFE space.
+            # Don't penalise near walls (agent should turn freely to recover).
+            # Cap stuck_frac at 0.6 so late-episode exploration isn't over-penalised.
+            curr_x_ = self.world.robot.x
+            curr_y_ = self.world.robot.y
+            pos_change = float(np.sqrt(
+                (curr_x_ - self._last_x) ** 2 + (curr_y_ - self._last_y) ** 2
+            ))
+            if pos_change < 2.0 and not danger:
+                stuck_frac = min(self.current_step / max(1, self.max_steps), 0.6)
+                reward -= 0.025 * (1.0 + stuck_frac)
+            self._last_x = curr_x_
+            self._last_y = curr_y_
 
         # Goal reached — large reward, end episode cleanly
         goal_reached = self.has_goal and self.world.check_goal_reached()
@@ -391,8 +506,18 @@ class RobotEnv(gym.Env[np.ndarray, int]):
         self.last_reward = reward
         self.last_collision = collided
 
-        terminated = collided  # Episode ends on collision for clean RL signal
+        terminated = self._consecutive_collisions >= 4
         truncated = self.current_step >= self.max_steps or goal_reached
+
+        # ── Episode survival completion bonus ─────────────────────────────────
+        # Awarded when the robot survives ALL max_steps without dying.
+        # This is the single most important signal for "learn to survive":
+        # completing a full episode earns +12 regardless of other rewards.
+        # Compare: dying 4× = −160; surviving 700 steps ≈ +7 survival + +12 bonus = +19.
+        if self.current_step >= self.max_steps and not terminated:
+            reward += 12.0
+
+        self.last_reward = reward
 
         info: dict[str, Any] = {
             "x": self.world.robot.x,
@@ -429,14 +554,28 @@ class RobotEnv(gym.Env[np.ndarray, int]):
 
     def get_state(self) -> dict[str, Any]:
         """Return a snapshot of the simulation for UI rendering."""
-        distances = cast_rays(
-            self.world.space,
-            (self.world.robot.x, self.world.robot.y),
-            self.world.robot.angle_degrees,
-            ray_count=self.ray_count,
-            ray_length=self.ray_length,
-            fov_degrees=self.ray_fov_degrees,
-        )
+        origin = (self.world.robot.x, self.world.robot.y)
+        heading = self.world.robot.angle_degrees
+        if self.sensor_angles is not None:
+            distances = cast_rays_at_angles(
+                self.world.space, origin, heading, self.sensor_angles, self.ray_length
+            )
+            # Absolute world-space angles so the canvas can draw rays correctly
+            sensor_angles_abs = [
+                (heading + rel_a) % 360.0 for rel_a in self.sensor_angles
+            ]
+            sensor_angle_labels = [direction_label(a) for a in self.sensor_angles]
+        else:
+            distances = cast_rays(
+                self.world.space,
+                origin,
+                heading,
+                ray_count=self.ray_count,
+                ray_length=self.ray_length,
+                fov_degrees=self.ray_fov_degrees,
+            )
+            sensor_angles_abs = None
+            sensor_angle_labels = None
         return {
             "x": self.world.robot.x,
             "y": self.world.robot.y,
@@ -449,6 +588,9 @@ class RobotEnv(gym.Env[np.ndarray, int]):
             "ray_count": self.ray_count,
             "ray_length": self.ray_length,
             "ray_fov_degrees": self.ray_fov_degrees,
+            # Fixed-angle sensor info (None when using FOV fan mode)
+            "sensor_angles_abs": sensor_angles_abs,
+            "sensor_angle_labels": sensor_angle_labels,
             "world_width": self.world.width,
             "world_height": self.world.height,
             "wall_margin": self.world.wall_margin,
@@ -624,6 +766,7 @@ class ContinuousRobotEnv(gym.Env[np.ndarray, np.ndarray]):
         # Explicit max_steps arg overrides profile; profile overrides built-in default of 500
         _profile_max_steps = int(dynamics_cfg.get("max_steps", 500))
         self.max_steps = max_steps if max_steps is not None else _profile_max_steps
+        self.sensor_angles: list[float] | None = None  # continuous env uses FOV fan only
         self.ray_count = max(ray_count, int(sensor_cfg["ray_count"]))
         self.ray_length = float(sensor_cfg["ray_length"])
         self.ray_fov_degrees = float(sensor_cfg["ray_fov_degrees"])
@@ -721,7 +864,11 @@ class ContinuousRobotEnv(gym.Env[np.ndarray, np.ndarray]):
         super().reset(seed=seed)
         self.current_step = 0
         self.episode_count += 1
-        self.world.reset()
+
+        # Randomise heading every episode for spatial generalisation
+        random_heading = float(self.np_random.uniform(0.0, 360.0))
+        self.world.reset(angle_degrees=random_heading)
+
         # Spawn logic: fixed position > randomize > center (with overlap fallback)
         if self.randomize_spawn:
             self._random_spawn()
@@ -830,12 +977,11 @@ class ContinuousRobotEnv(gym.Env[np.ndarray, np.ndarray]):
         return observation, reward, terminated, truncated, info
 
     def get_state(self) -> dict[str, Any]:
+        origin = (self.world.robot.x, self.world.robot.y)
+        heading = self.world.robot.angle_degrees
         distances = cast_rays(
-            self.world.space,
-            (self.world.robot.x, self.world.robot.y),
-            self.world.robot.angle_degrees,
-            ray_count=self.ray_count,
-            ray_length=self.ray_length,
+            self.world.space, origin, heading,
+            ray_count=self.ray_count, ray_length=self.ray_length,
             fov_degrees=self.ray_fov_degrees,
         )
         return {
@@ -850,6 +996,8 @@ class ContinuousRobotEnv(gym.Env[np.ndarray, np.ndarray]):
             "ray_count": self.ray_count,
             "ray_length": self.ray_length,
             "ray_fov_degrees": self.ray_fov_degrees,
+            "sensor_angles_abs": None,
+            "sensor_angle_labels": None,
             "world_width": self.world.width,
             "world_height": self.world.height,
             "wall_margin": self.world.wall_margin,
@@ -967,3 +1115,94 @@ class ContinuousRobotEnv(gym.Env[np.ndarray, np.ndarray]):
                 pygame.quit()
         except Exception:
             pass
+
+
+class CurriculumRobotEnv(RobotEnv):
+    """RobotEnv that swaps obstacle layouts every episode.
+
+    Gives the agent genuine spatial generalisation: it cannot memorise a single
+    map. Instead it must learn to read sensor values and navigate to the goal
+    from any configuration.
+
+    The profile's world config must contain a ``layouts`` list — each element is
+    a list of obstacle dicts identical in format to ``world.obstacles``.
+    If ``layouts`` is absent the default obstacle list is used as a single-layout
+    pool, which degrades gracefully to standard RobotEnv behaviour.
+    """
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        world_cfg = self.profile_config["world"]
+        raw_pool = world_cfg.get("layouts")
+        if raw_pool and isinstance(raw_pool, list) and len(raw_pool) > 0:
+            self._layout_pool: list[list[dict]] = [list(layout) for layout in raw_pool]
+        else:
+            # Fall back to whatever obstacles were loaded at init
+            self._layout_pool = [list(self.world.obstacles)]
+
+    # ── Obstacle hot-swap helpers ──────────────────────────────────────────
+
+    def _swap_layout(self, obstacles: list[dict]) -> None:
+        """Remove current obstacles from the pymunk space and add new ones."""
+        for shape in list(self.world._obstacle_shapes):
+            if shape in self.world.space.shapes:
+                self.world.space.remove(shape)
+        for body in list(self.world._obstacle_bodies):
+            if body in self.world.space.bodies:
+                self.world.space.remove(body)
+        self.world._obstacle_shapes.clear()
+        self.world._obstacle_bodies.clear()
+        self.world.obstacles.clear()
+        self.world._obstacle_defs = obstacles
+        self.world._create_obstacles()
+
+    # ── Overridden reset ───────────────────────────────────────────────────
+
+    def reset(
+        self,
+        *,
+        seed: int | None = None,
+        options: dict[str, Any] | None = None,
+    ) -> tuple[np.ndarray, dict[str, Any]]:
+        # Seed gymnasium RNG (does NOT call our parent reset logic yet)
+        gym.Env.reset(self, seed=seed)
+        self.current_step = 0
+        self.episode_count += 1
+
+        # 1. Pick a random obstacle layout BEFORE placing anything.
+        idx = int(self.np_random.integers(0, len(self._layout_pool)))
+        self._swap_layout(list(self._layout_pool[idx]))
+
+        # 2. Reset robot to centre with a random heading.
+        random_heading = float(self.np_random.uniform(0.0, 360.0))
+        self.world.reset(angle_degrees=random_heading)
+
+        # 3. Randomise spawn so robot never starts from the same spot.
+        self._random_spawn()
+
+        # 4. Speed / turn scale variation for robustness.
+        speed_scale = float(self.np_random.uniform(self.speed_scale_min, self.speed_scale_max))
+        turn_scale = float(self.np_random.uniform(self.turn_scale_min, self.turn_scale_max))
+        self.world.robot.config.speed = self._base_speed * speed_scale
+        self.world.robot.config.turn_rate_degrees = self._base_turn_rate * turn_scale
+
+        # 5. Randomise goal every episode so the policy cannot memorise a path.
+        if self.has_goal:
+            self._random_goal()
+
+        # 6. Housekeeping state.
+        self.last_reward = 0.0
+        self.last_collision = False
+        self._consecutive_collisions = 0
+        self._last_x = self.world.robot.x
+        self._last_y = self.world.robot.y
+        if self.has_goal:
+            gx = self.world.goal_x or 0.0
+            gy = self.world.goal_y or 0.0
+            dx0 = gx - self.world.robot.x
+            dy0 = gy - self.world.robot.y
+            self._last_goal_dist = float(np.sqrt(dx0 * dx0 + dy0 * dy0))
+        else:
+            self._last_goal_dist = 0.0
+
+        return self._get_observation(), {"status": "reset"}

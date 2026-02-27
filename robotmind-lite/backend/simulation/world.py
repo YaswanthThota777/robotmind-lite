@@ -97,9 +97,9 @@ class SimulationWorld:
         if self._obstacle_bodies:
             self.space.add(*self._obstacle_bodies, *self._obstacle_shapes)
 
-    def reset(self) -> None:
+    def reset(self, angle_degrees: float = 0.0) -> None:
         """Reset world state to defaults."""
-        self.robot.reset(x=self.width / 2, y=self.height / 2)
+        self.robot.reset(x=self.width / 2, y=self.height / 2, angle_degrees=angle_degrees)
 
     def check_goal_reached(self) -> bool:
         """Return True if the robot centre is within the goal radius."""

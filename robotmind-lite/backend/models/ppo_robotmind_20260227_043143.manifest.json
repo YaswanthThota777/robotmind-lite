@@ -1,0 +1,37 @@
+{
+  "generated_at": "2026-02-27T04:31:46.758398",
+  "model_artifacts": {
+    "sb3_zip": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\ppo_robotmind_20260227_043143.zip",
+    "onnx": "C:\\Users\\yaswa\\robotmind\\robotmind-lite\\backend\\models\\ppo_robotmind_20260227_043143.onnx"
+  },
+  "metadata": {
+    "algorithm": "PPO",
+    "control_mode": "discrete",
+    "environment_profile": "custom_env_goal_chase",
+    "environment_label": "Custom goal_chase",
+    "model_profile": "deep",
+    "model_profile_label": "Deep",
+    "algorithm_params": {},
+    "memory_mode": "visited_grid",
+    "observation_dim": 49
+  },
+  "validation": {
+    "sb3_runtime": {
+      "ok": true,
+      "action_shape": [
+        1
+      ],
+      "observation_dim": 49
+    },
+    "onnx_runtime": {
+      "ok": true,
+      "input_name": "observation",
+      "output_shapes": [
+        [
+          1
+        ]
+      ],
+      "observation_dim": 49
+    }
+  }
+}

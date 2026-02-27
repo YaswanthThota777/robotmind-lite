@@ -202,18 +202,18 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
   };
 
   return (
-    <section className="rounded-2xl border border-night-700 bg-night-800 p-4 shadow-panel">
+    <section className="rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-panel">
       <div className="flex items-center justify-between">
         <div className="text-xs uppercase tracking-[0.3em] text-slate-400">Scenario Map Pro</div>
         <div className="flex gap-2">
           <button
-            className={`rounded px-2 py-1 text-[10px] ${showPresets ? "bg-purple-600/30 text-purple-100" : "bg-night-700 text-slate-300"}`}
+            className={`rounded px-2 py-1 text-[10px] ${showPresets ? "bg-amber-600/30 text-amber-100" : "bg-slate-800 text-slate-300"}`}
             onClick={() => setShowPresets(!showPresets)}
           >
             {presets.length > 0 ? `Presets (${presets.length})` : "Save Preset"}
           </button>
           <button
-            className={`rounded px-2 py-1 text-[10px] ${config.enabled ? "bg-cyan-600/30 text-cyan-100" : "bg-night-700 text-slate-300"}`}
+            className={`rounded px-2 py-1 text-[10px] ${config.enabled ? "bg-teal-600/30 text-teal-100" : "bg-slate-800 text-slate-300"}`}
             onClick={() => onChange({ ...config, enabled: !config.enabled })}
           >
             {config.enabled ? "Editor On" : "Editor Off"}
@@ -226,7 +226,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
           <span>World W</span>
           <input
             type="number"
-            className="w-full rounded border border-night-600 bg-night-900 px-2 py-1"
+            className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1"
             min={320}
             max={2000}
             value={config.worldWidth}
@@ -237,7 +237,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
           <span>World H</span>
           <input
             type="number"
-            className="w-full rounded border border-night-600 bg-night-900 px-2 py-1"
+            className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1"
             min={240}
             max={1200}
             value={config.worldHeight}
@@ -248,7 +248,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
           <span>Wall Margin</span>
           <input
             type="number"
-            className="w-full rounded border border-night-600 bg-night-900 px-2 py-1"
+            className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1"
             min={8}
             max={120}
             value={config.wallMargin}
@@ -261,7 +261,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
           <span>Default W</span>
           <input
             type="number"
-            className="w-full rounded border border-night-600 bg-night-900 px-2 py-1"
+            className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1"
             min={20}
             max={400}
             value={config.defaultObstacleWidth}
@@ -272,7 +272,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
           <span>Default H</span>
           <input
             type="number"
-            className="w-full rounded border border-night-600 bg-night-900 px-2 py-1"
+            className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1"
             min={20}
             max={400}
             value={config.defaultObstacleHeight}
@@ -283,7 +283,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
           <span>Zoom</span>
           <input
             type="number"
-            className="w-full rounded border border-night-600 bg-night-900 px-2 py-1"
+            className="w-full rounded border border-slate-700 bg-slate-950 px-2 py-1"
             min={0.5}
             max={3}
             step={0.1}
@@ -292,7 +292,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
           />
         </label>
         <button
-          className="mt-5 rounded border border-night-600 bg-night-900 px-2 py-1 text-xs text-slate-200"
+          className="mt-5 rounded border border-slate-700 bg-slate-950 px-2 py-1 text-xs text-slate-200"
           onClick={() => {
             setLocalZoom(1);
             setLocalPanX(0);
@@ -304,12 +304,12 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
       </div>
 
       {showPresets && (
-        <div className="mt-3 space-y-2 rounded border border-night-600 bg-night-900 p-2">
+        <div className="mt-3 space-y-2 rounded border border-slate-700 bg-slate-950 p-2">
           <div className="flex gap-1">
             <input
               type="text"
               placeholder="Preset name..."
-              className="flex-1 rounded border border-night-600 bg-night-800 px-2 py-1 text-xs text-slate-200 placeholder-slate-600"
+              className="flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-200 placeholder-slate-600"
               value={presetName}
               onChange={(event) => setPresetName(event.target.value)}
               onKeyDown={(event) => {
@@ -317,7 +317,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
               }}
             />
             <button
-              className="rounded border border-purple-600 bg-purple-600/20 px-2 py-1 text-xs text-purple-200"
+              className="rounded border border-amber-600 bg-amber-600/20 px-2 py-1 text-xs text-amber-200"
               onClick={savePreset}
             >
               Save
@@ -326,7 +326,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
           {presets.length > 0 && (
             <div className="space-y-1 max-h-32 overflow-y-auto">
               {presets.map((preset) => (
-                <div key={preset.name} className="flex items-center gap-1 rounded bg-night-700 px-2 py-1">
+                <div key={preset.name} className="flex items-center gap-1 rounded bg-slate-800 px-2 py-1">
                   <button
                     className="flex-1 text-left text-xs text-slate-300 hover:text-slate-100"
                     onClick={() => loadPreset(preset)}
@@ -348,7 +348,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
 
       <div
         data-map-surface="true"
-        className="mt-3 relative overflow-hidden rounded-lg border border-night-700 bg-slate-950 cursor-move select-none"
+        className="mt-3 relative overflow-hidden rounded-lg border border-slate-800 bg-slate-950 cursor-move select-none"
         style={{ width: preview.width, height: preview.height }}
         onClick={handleCanvasClick}
         onMouseDown={handleCanvasPan}
@@ -399,7 +399,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
             {config.obstacles.map((obstacle, index) => (
               <div
                 key={`${obstacle.x}-${obstacle.y}-${index}`}
-                className={`absolute border transition-all ${selectedIndex === index ? "border-cyan-300 shadow-lg shadow-cyan-500/50" : "border-slate-300/30"} bg-slate-500/80`}
+                className={`absolute border transition-all ${selectedIndex === index ? "border-teal-300 shadow-lg shadow-teal-500/50" : "border-slate-300/30"} bg-slate-500/80`}
                 style={{
                   left: obstacle.x * finalScale,
                   top: obstacle.y * finalScale,
@@ -432,7 +432,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
             {selectedIndex !== null && config.obstacles[selectedIndex] ? (
               <>
                 <div
-                  className="absolute w-3 h-3 cursor-se-resize rounded-sm border border-cyan-200 bg-cyan-400 hover:bg-cyan-300"
+                  className="absolute w-3 h-3 cursor-se-resize rounded-sm border border-teal-200 bg-teal-400 hover:bg-teal-300"
                   style={{
                     left: (config.obstacles[selectedIndex].x + config.obstacles[selectedIndex].width) * finalScale - 6,
                     top: (config.obstacles[selectedIndex].y + config.obstacles[selectedIndex].height) * finalScale - 6,
@@ -464,7 +464,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
 
       <div className="mt-3 flex items-center gap-2">
         <button
-          className="rounded border border-night-600 bg-night-900 px-3 py-1 text-xs text-slate-200 hover:bg-night-700"
+          className="rounded border border-slate-700 bg-slate-950 px-3 py-1 text-xs text-slate-200 hover:bg-slate-800"
           onClick={() => {
             const next = config.obstacles.slice(0, -1);
             setSelectedIndex(next.length ? Math.min(selectedIndex ?? 0, next.length - 1) : null);
@@ -474,7 +474,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
           ↶ Undo
         </button>
         <button
-          className="rounded border border-night-600 bg-night-900 px-3 py-1 text-xs text-slate-200 hover:bg-night-700"
+          className="rounded border border-slate-700 bg-slate-950 px-3 py-1 text-xs text-slate-200 hover:bg-slate-800"
           onClick={() => {
             setSelectedIndex(null);
             onChange({ ...config, obstacles: [] });
@@ -498,14 +498,14 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
       </div>
 
       {selectedIndex !== null && config.obstacles[selectedIndex] && (
-        <div className="mt-3 rounded border border-night-600 bg-night-900 p-3 space-y-2">
+        <div className="mt-3 rounded border border-slate-700 bg-slate-950 p-3 space-y-2">
           <div className="text-xs font-semibold text-slate-300">Obstacle #{selectedIndex + 1}</div>
           <div className="grid grid-cols-4 gap-2 text-[11px]">
             <label className="space-y-1">
               <span className="text-slate-400">X</span>
               <input
                 type="number"
-                className="w-full rounded border border-night-600 bg-night-800 px-2 py-1 text-slate-200"
+                className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-slate-200"
                 value={Math.round(config.obstacles[selectedIndex].x)}
                 onChange={(event) => {
                   const obstacles = [...config.obstacles];
@@ -518,7 +518,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
               <span className="text-slate-400">Y</span>
               <input
                 type="number"
-                className="w-full rounded border border-night-600 bg-night-800 px-2 py-1 text-slate-200"
+                className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-slate-200"
                 value={Math.round(config.obstacles[selectedIndex].y)}
                 onChange={(event) => {
                   const obstacles = [...config.obstacles];
@@ -531,7 +531,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
               <span className="text-slate-400">W</span>
               <input
                 type="number"
-                className="w-full rounded border border-night-600 bg-night-800 px-2 py-1 text-slate-200"
+                className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-slate-200"
                 value={Math.round(config.obstacles[selectedIndex].width)}
                 onChange={(event) => {
                   const obstacles = [...config.obstacles];
@@ -544,7 +544,7 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
               <span className="text-slate-400">H</span>
               <input
                 type="number"
-                className="w-full rounded border border-night-600 bg-night-800 px-2 py-1 text-slate-200"
+                className="w-full rounded border border-slate-700 bg-slate-900 px-2 py-1 text-slate-200"
                 value={Math.round(config.obstacles[selectedIndex].height)}
                 onChange={(event) => {
                   const obstacles = [...config.obstacles];
@@ -580,8 +580,9 @@ export const ScenarioMapEditor = ({ config, onChange }: ScenarioMapEditorProps) 
 
       <div className="mt-2 text-[10px] text-slate-500 space-y-1">
         <p>💡 <strong>Shift + Drag</strong> to pan | <strong>Ctrl + Scroll</strong> to zoom</p>
-        <p>💡 <strong>Yellow handle</strong> rotates obstacle | <strong>Cyan corner</strong> resizes</p>
+        <p>💡 <strong>Yellow handle</strong> rotates obstacle | <strong>teal corner</strong> resizes</p>
       </div>
     </section>
   );
 };
+

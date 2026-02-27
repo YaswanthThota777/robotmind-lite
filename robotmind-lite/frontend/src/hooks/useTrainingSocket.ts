@@ -84,3 +84,4 @@ export const useTrainingSocket = (baseUrl = DEFAULT_BASE) => {
 
   return { metrics, status, resetMetrics };
 };
+

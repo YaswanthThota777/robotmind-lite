@@ -166,22 +166,25 @@ ENVIRONMENT_PROFILES: dict[str, dict[str, Any]] = {
                 {"x": 440.0, "y": 260.0, "width": 60.0, "height": 140.0},
                 {"x": 140.0, "y": 360.0, "width": 160.0, "height": 40.0},
             ],
+            "goal": {"x": 520.0, "y": 70.0, "radius": 22.0},
         },
         "sensor": {
             "ray_count": 8,
-            "ray_length": 140.0,
-            "ray_fov_degrees": 120.0,
+            "ray_length": 160.0,
+            "ray_fov_degrees": 270.0,
         },
         "dynamics": {
             "sensor_noise_std": 0.0,
             "heading_drift_std": 0.0,
             "speed_noise_std": 0.0,
             "turn_noise_std": 0.0,
-            "randomize_spawn": False,
+            "randomize_spawn": True,
+            "randomize_goal": True,
             "speed_scale_min": 1.0,
             "speed_scale_max": 1.0,
             "turn_scale_min": 1.0,
             "turn_scale_max": 1.0,
+            "max_steps": 700,
         },
         "robot": {
             "radius": 15.0,
@@ -197,6 +200,460 @@ ENVIRONMENT_PROFILES: dict[str, dict[str, Any]] = {
             "ray": "rgba(56, 189, 248, 0.5)",
         },
     },
+    "arena_improved": {
+        "label": "Arena Improved",
+        "description": "Arena Basic with 16-ray / 300\u00b0 sensors, randomised spawn + goal. Recommended for new training runs.",
+        "metadata": {"supported_control_modes": ["discrete", "continuous"]},
+        "world": {
+            "width": 640,
+            "height": 480,
+            "wall_margin": 20.0,
+            "obstacles": [
+                {"x": 180.0, "y": 140.0, "width": 120.0, "height": 30.0},
+                {"x": 440.0, "y": 260.0, "width": 60.0, "height": 140.0},
+                {"x": 140.0, "y": 360.0, "width": 160.0, "height": 40.0},
+            ],
+            "goal": {"x": 520.0, "y": 70.0, "radius": 22.0},
+        },
+        "sensor": {
+            "ray_count": 16,
+            "ray_length": 180.0,
+            "ray_fov_degrees": 300.0,
+        },
+        "dynamics": {
+            "sensor_noise_std": 0.0,
+            "heading_drift_std": 0.0,
+            "speed_noise_std": 0.0,
+            "turn_noise_std": 0.0,
+            "randomize_spawn": True,
+            "randomize_goal": True,
+            "speed_scale_min": 1.0,
+            "speed_scale_max": 1.0,
+            "turn_scale_min": 1.0,
+            "turn_scale_max": 1.0,
+            "max_steps": 700,
+        },
+        "robot": {
+            "radius": 15.0,
+            "speed": 130.0,
+            "turn_rate_degrees": 12.0,
+        },
+        "visual": {
+            "bg": "#0f172a",
+            "wall": "#1e293b",
+            "obstacle": "#1f2937",
+            "robot": "#22c55e",
+            "robot_collision": "#ef4444",
+            "ray": "rgba(56, 189, 248, 0.5)",
+        },
+    },
+    "curriculum_v1": {
+        "label": "Curriculum V1",
+        "description": (
+            "Four different arena layouts chosen randomly each episode. "
+            "Spawn + goal randomised every reset. Builds true spatial generalisation "
+            "\u2014 the agent cannot memorise a single map. "
+            "Use this for the best real-world transfer."
+        ),
+        "metadata": {
+            "supported_control_modes": ["discrete", "continuous"],
+            "env_class": "curriculum",
+        },
+        "world": {
+            "width": 640,
+            "height": 480,
+            "wall_margin": 20.0,
+            "obstacles": [
+                {"x": 180.0, "y": 140.0, "width": 120.0, "height": 30.0},
+                {"x": 440.0, "y": 260.0, "width": 60.0, "height": 140.0},
+                {"x": 140.0, "y": 360.0, "width": 160.0, "height": 40.0},
+            ],
+            "goal": {"x": 520.0, "y": 70.0, "radius": 22.0},
+            "layouts": [
+                [
+                    {"x": 180.0, "y": 140.0, "width": 120.0, "height": 30.0},
+                    {"x": 440.0, "y": 260.0, "width": 60.0, "height": 140.0},
+                    {"x": 140.0, "y": 360.0, "width": 160.0, "height": 40.0},
+                ],
+                [
+                    {"x": 320.0, "y": 100.0, "width": 30.0, "height": 200.0},
+                    {"x": 100.0, "y": 180.0, "width": 160.0, "height": 30.0},
+                    {"x": 450.0, "y": 330.0, "width": 130.0, "height": 35.0},
+                    {"x": 200.0, "y": 320.0, "width": 35.0, "height": 130.0},
+                ],
+                [
+                    {"x": 220.0, "y": 190.0, "width": 85.0, "height": 85.0},
+                    {"x": 390.0, "y": 140.0, "width": 45.0, "height": 170.0},
+                    {"x": 100.0, "y": 340.0, "width": 210.0, "height": 30.0},
+                    {"x": 460.0, "y": 340.0, "width": 80.0, "height": 55.0},
+                ],
+                [
+                    {"x": 190.0, "y": 50.0, "width": 30.0, "height": 280.0},
+                    {"x": 380.0, "y": 150.0, "width": 30.0, "height": 260.0},
+                    {"x": 490.0, "y": 60.0, "width": 110.0, "height": 30.0},
+                    {"x": 80.0, "y": 390.0, "width": 190.0, "height": 30.0},
+                ],
+            ],
+        },
+        "sensor": {
+            "ray_count": 16,
+            "ray_length": 190.0,
+            "ray_fov_degrees": 300.0,
+        },
+        "dynamics": {
+            "sensor_noise_std": 0.01,
+            "heading_drift_std": 0.3,
+            "speed_noise_std": 0.02,
+            "turn_noise_std": 0.3,
+            "randomize_spawn": True,
+            "randomize_goal": True,
+            "speed_scale_min": 0.95,
+            "speed_scale_max": 1.05,
+            "turn_scale_min": 0.95,
+            "turn_scale_max": 1.05,
+            "max_steps": 700,
+        },
+        "robot": {
+            "radius": 15.0,
+            "speed": 130.0,
+            "turn_rate_degrees": 12.0,
+        },
+        "visual": {
+            "bg": "#0f172a",
+            "wall": "#1e293b",
+            "obstacle": "#312e81",
+            "robot": "#a78bfa",
+            "robot_collision": "#ef4444",
+            "ray": "rgba(167, 139, 250, 0.55)",
+            "goal": "#22c55e",
+        },
+    },
+    "real_world_transfer_v1": {
+        "label": "Real-World Transfer V1",
+        "description": (
+            "Heavily randomised arena for sim-to-real transfer. "
+            "Strong sensor noise, motor drift, speed variation and spawn randomisation "
+            "produce robust policies that survive imperfect hardware. "
+            "Use curriculum_v1 to pre-train, then fine-tune on this profile."
+        ),
+        "metadata": {
+            "supported_control_modes": ["discrete", "continuous"],
+            "env_class": "curriculum",
+        },
+        "world": {
+            "width": 640,
+            "height": 480,
+            "wall_margin": 20.0,
+            "obstacles": [
+                {"x": 180.0, "y": 140.0, "width": 120.0, "height": 30.0},
+                {"x": 440.0, "y": 260.0, "width": 60.0, "height": 140.0},
+                {"x": 140.0, "y": 360.0, "width": 160.0, "height": 40.0},
+            ],
+            "goal": {"x": 520.0, "y": 70.0, "radius": 24.0},
+            "layouts": [
+                [
+                    {"x": 180.0, "y": 140.0, "width": 120.0, "height": 30.0},
+                    {"x": 440.0, "y": 260.0, "width": 60.0, "height": 140.0},
+                    {"x": 140.0, "y": 360.0, "width": 160.0, "height": 40.0},
+                ],
+                [
+                    {"x": 290.0, "y": 90.0, "width": 30.0, "height": 210.0},
+                    {"x": 100.0, "y": 190.0, "width": 150.0, "height": 28.0},
+                    {"x": 440.0, "y": 320.0, "width": 140.0, "height": 35.0},
+                ],
+                [
+                    {"x": 210.0, "y": 200.0, "width": 90.0, "height": 90.0},
+                    {"x": 400.0, "y": 130.0, "width": 40.0, "height": 180.0},
+                    {"x": 90.0,  "y": 345.0, "width": 220.0, "height": 28.0},
+                ],
+                [
+                    {"x": 185.0, "y": 55.0,  "width": 28.0, "height": 290.0},
+                    {"x": 370.0, "y": 145.0, "width": 28.0, "height": 270.0},
+                    {"x": 480.0, "y": 55.0,  "width": 120.0, "height": 28.0},
+                ],
+                [
+                    {"x": 120.0, "y": 120.0, "width": 180.0, "height": 28.0},
+                    {"x": 350.0, "y": 220.0, "width": 28.0, "height": 160.0},
+                    {"x": 430.0, "y": 100.0, "width": 150.0, "height": 28.0},
+                    {"x": 100.0, "y": 340.0, "width": 28.0, "height": 100.0},
+                ],
+                [
+                    {"x": 240.0, "y": 140.0, "width": 60.0, "height": 60.0},
+                    {"x": 380.0, "y": 240.0, "width": 60.0, "height": 60.0},
+                    {"x": 130.0, "y": 300.0, "width": 60.0, "height": 60.0},
+                    {"x": 460.0, "y": 130.0, "width": 60.0, "height": 60.0},
+                    {"x": 280.0, "y": 350.0, "width": 60.0, "height": 60.0},
+                ],
+            ],
+        },
+        "sensor": {
+            "ray_count": 16,
+            "ray_length": 190.0,
+            "ray_fov_degrees": 300.0,
+        },
+        "dynamics": {
+            "sensor_noise_std": 0.04,
+            "heading_drift_std": 1.2,
+            "speed_noise_std": 0.08,
+            "turn_noise_std": 1.0,
+            "randomize_spawn": True,
+            "randomize_goal": True,
+            "speed_scale_min": 0.80,
+            "speed_scale_max": 1.20,
+            "turn_scale_min": 0.80,
+            "turn_scale_max": 1.20,
+            "max_steps": 800,
+        },
+        "robot": {
+            "radius": 15.0,
+            "speed": 130.0,
+            "turn_rate_degrees": 12.0,
+        },
+        "visual": {
+            "bg": "#0a0f1e",
+            "wall": "#1e293b",
+            "obstacle": "#3b1f1f",
+            "robot": "#fb923c",
+            "robot_collision": "#ef4444",
+            "ray": "rgba(251, 146, 60, 0.55)",
+            "goal": "#22c55e",
+        },
+    },
+    # ── Fixed-angle sensor presets ─────────────────────────────────────────────
+    # These presets simulate real hardware where sensors are mounted at specific
+    # physical positions rather than a uniform FOV fan.  The 'sensor_angles' list
+    # contains robot-relative offsets in degrees (0=front, 90=right, 180=rear).
+    # ────────────────────────────────────────────────────────────────────────────
+    "sensor_1_front": {
+        "label": "1-Sensor: Front Only",
+        "description": (
+            "Single forward-facing sensor — the hardest sensor configuration. "
+            "Robot is completely blind to sides and rear. Models must learn to "
+            "turn proactively to scan the environment, just like a real front-mounted "
+            "ultrasonic sensor (e.g. HC-SR04 on a wheeled robot)."
+        ),
+        "metadata": {"supported_control_modes": ["discrete"]},
+        "world": {
+            "width": 600,
+            "height": 420,
+            "wall_margin": 18.0,
+            "obstacles": [
+                {"x": 160.0, "y": 130.0, "width": 100.0, "height": 30.0},
+                {"x": 380.0, "y": 240.0, "width": 30.0, "height": 120.0},
+                {"x": 240.0, "y": 320.0, "width": 140.0, "height": 30.0},
+            ],
+            "goal": {"x": 510.0, "y": 60.0, "radius": 22.0},
+        },
+        "sensor": {
+            "ray_count": 1,
+            "ray_length": 180.0,
+            "ray_fov_degrees": 360.0,
+            "sensor_angles": [0.0],
+        },
+        "dynamics": {
+            "randomize_spawn": True,
+            "randomize_goal": True,
+            "max_steps": 800,
+        },
+        "robot": {
+            "radius": 15.0,
+            "speed": 120.0,
+            "turn_rate_degrees": 12.0,
+        },
+        "visual": {
+            "bg": "#0d1117",
+            "wall": "#21262d",
+            "obstacle": "#30363d",
+            "robot": "#58a6ff",
+            "robot_collision": "#f85149",
+            "ray": "rgba(88, 166, 255, 0.85)",
+            "goal": "#3fb950",
+        },
+    },
+    "sensor_2_front_rear": {
+        "label": "2-Sensor: Front + Rear",
+        "description": (
+            "Two sensors facing front and rear — like a robot with both a "
+            "front proximity sensor and a rear bump sensor. The robot can tell "
+            "if it is about to reverse into something but is still blind to sides."
+        ),
+        "metadata": {"supported_control_modes": ["discrete"]},
+        "world": {
+            "width": 600,
+            "height": 420,
+            "wall_margin": 18.0,
+            "obstacles": [
+                {"x": 160.0, "y": 130.0, "width": 100.0, "height": 30.0},
+                {"x": 380.0, "y": 240.0, "width": 30.0, "height": 120.0},
+                {"x": 240.0, "y": 320.0, "width": 140.0, "height": 30.0},
+            ],
+            "goal": {"x": 510.0, "y": 60.0, "radius": 22.0},
+        },
+        "sensor": {
+            "ray_count": 2,
+            "ray_length": 180.0,
+            "ray_fov_degrees": 360.0,
+            "sensor_angles": [0.0, 180.0],
+        },
+        "dynamics": {
+            "randomize_spawn": True,
+            "randomize_goal": True,
+            "max_steps": 700,
+        },
+        "robot": {
+            "radius": 15.0,
+            "speed": 120.0,
+            "turn_rate_degrees": 12.0,
+        },
+        "visual": {
+            "bg": "#0d1117",
+            "wall": "#21262d",
+            "obstacle": "#30363d",
+            "robot": "#bc8cff",
+            "robot_collision": "#f85149",
+            "ray": "rgba(188, 140, 255, 0.85)",
+            "goal": "#3fb950",
+        },
+    },
+    "sensor_3_tricycle": {
+        "label": "3-Sensor: Trisector",
+        "description": (
+            "Three sensors evenly distributed at 120° apart (front, rear-right, rear-left). "
+            "Common in simple obstacle-avoidance robots and triangular drone frames. "
+            "Gives 360° coverage without dedicated side sensors."
+        ),
+        "metadata": {"supported_control_modes": ["discrete"]},
+        "world": {
+            "width": 600,
+            "height": 420,
+            "wall_margin": 18.0,
+            "obstacles": [
+                {"x": 160.0, "y": 130.0, "width": 100.0, "height": 30.0},
+                {"x": 380.0, "y": 240.0, "width": 30.0, "height": 120.0},
+                {"x": 240.0, "y": 320.0, "width": 140.0, "height": 30.0},
+            ],
+            "goal": {"x": 510.0, "y": 60.0, "radius": 22.0},
+        },
+        "sensor": {
+            "ray_count": 3,
+            "ray_length": 180.0,
+            "ray_fov_degrees": 360.0,
+            "sensor_angles": [0.0, 120.0, 240.0],
+        },
+        "dynamics": {
+            "randomize_spawn": True,
+            "randomize_goal": True,
+            "max_steps": 650,
+        },
+        "robot": {
+            "radius": 15.0,
+            "speed": 120.0,
+            "turn_rate_degrees": 12.0,
+        },
+        "visual": {
+            "bg": "#0d1117",
+            "wall": "#21262d",
+            "obstacle": "#30363d",
+            "robot": "#ffa657",
+            "robot_collision": "#f85149",
+            "ray": "rgba(255, 166, 87, 0.85)",
+            "goal": "#3fb950",
+        },
+    },
+    "sensor_4_cardinal": {
+        "label": "4-Sensor: Cardinal (N/E/S/W)",
+        "description": (
+            "Four sensors at 0°, 90°, 180°, 270° — true cardinal directions relative to "
+            "the robot body. Standard layout for industrial AGVs, warehouse robots, and "
+            "many commercial cleaning robots (e.g. Roomba-style). Full 360° awareness "
+            "with minimal sensor count."
+        ),
+        "metadata": {"supported_control_modes": ["discrete"]},
+        "world": {
+            "width": 600,
+            "height": 420,
+            "wall_margin": 18.0,
+            "obstacles": [
+                {"x": 160.0, "y": 130.0, "width": 100.0, "height": 30.0},
+                {"x": 380.0, "y": 240.0, "width": 30.0, "height": 120.0},
+                {"x": 240.0, "y": 320.0, "width": 140.0, "height": 30.0},
+            ],
+            "goal": {"x": 510.0, "y": 60.0, "radius": 22.0},
+        },
+        "sensor": {
+            "ray_count": 4,
+            "ray_length": 180.0,
+            "ray_fov_degrees": 360.0,
+            "sensor_angles": [0.0, 90.0, 180.0, 270.0],
+        },
+        "dynamics": {
+            "randomize_spawn": True,
+            "randomize_goal": True,
+            "max_steps": 600,
+        },
+        "robot": {
+            "radius": 15.0,
+            "speed": 120.0,
+            "turn_rate_degrees": 12.0,
+        },
+        "visual": {
+            "bg": "#0d1117",
+            "wall": "#21262d",
+            "obstacle": "#30363d",
+            "robot": "#39d353",
+            "robot_collision": "#f85149",
+            "ray": "rgba(57, 211, 83, 0.85)",
+            "goal": "#ffa657",
+        },
+    },
+    "sensor_4_front_focused": {
+        "label": "4-Sensor: Front-Focused Arc",
+        "description": (
+            "Four tightly-grouped sensors in a ±30° forward arc — simulates a "
+            "narrow automotive LiDAR stripe or a front-facing time-of-flight array. "
+            "Excellent forward-depth resolution but near-blind to sides/rear. "
+            "Robot must navigate by heading toward open space, rarely reversing."
+        ),
+        "metadata": {"supported_control_modes": ["discrete"]},
+        "world": {
+            "width": 600,
+            "height": 420,
+            "wall_margin": 18.0,
+            "obstacles": [
+                {"x": 160.0, "y": 130.0, "width": 100.0, "height": 30.0},
+                {"x": 380.0, "y": 240.0, "width": 30.0, "height": 120.0},
+                {"x": 240.0, "y": 320.0, "width": 140.0, "height": 30.0},
+            ],
+            "goal": {"x": 510.0, "y": 60.0, "radius": 22.0},
+        },
+        "sensor": {
+            "ray_count": 4,
+            "ray_length": 200.0,
+            "ray_fov_degrees": 60.0,
+            "sensor_angles": [-30.0, -10.0, 10.0, 30.0],
+        },
+        "dynamics": {
+            "randomize_spawn": True,
+            "randomize_goal": True,
+            "max_steps": 750,
+        },
+        "robot": {
+            "radius": 15.0,
+            "speed": 120.0,
+            "turn_rate_degrees": 12.0,
+        },
+        "visual": {
+            "bg": "#0d1117",
+            "wall": "#21262d",
+            "obstacle": "#30363d",
+            "robot": "#f778ba",
+            "robot_collision": "#f85149",
+            "ray": "rgba(247, 120, 186, 0.85)",
+            "goal": "#3fb950",
+        },
+    },
+    # ── End fixed-angle sensor presets ────────────────────────────────────────
+
     "warehouse_dense": {
         "label": "Warehouse Dense",
         "description": "High-obstacle layout for difficult navigation and collision avoidance.",

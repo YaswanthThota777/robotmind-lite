@@ -57,7 +57,7 @@ export const TrainingAnalytics = ({ apiBase, runId }: AnalyticsProps) => {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <div className="animate-spin h-6 w-6 border-3 border-cyan-500 border-t-transparent rounded-full"></div>
+        <div className="animate-spin h-6 w-6 border-3 border-teal-500 border-t-transparent rounded-full"></div>
       </div>
     );
   }
@@ -68,7 +68,7 @@ export const TrainingAnalytics = ({ apiBase, runId }: AnalyticsProps) => {
         <div className="grid grid-cols-4 gap-3">
           <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-3">
             <div className="text-xs text-slate-500 mb-1">Average Reward</div>
-            <div className="text-lg font-bold text-cyan-300">
+            <div className="text-lg font-bold text-teal-300">
               {stats.avgReward.toFixed(2)}
             </div>
           </div>
@@ -80,7 +80,7 @@ export const TrainingAnalytics = ({ apiBase, runId }: AnalyticsProps) => {
           </div>
           <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-3">
             <div className="text-xs text-slate-500 mb-1">Recent Avg (20 ep)</div>
-            <div className="text-lg font-bold text-purple-300">
+            <div className="text-lg font-bold text-amber-300">
               {stats.recentAvg.toFixed(2)}
             </div>
           </div>
@@ -147,3 +147,4 @@ export const TrainingAnalytics = ({ apiBase, runId }: AnalyticsProps) => {
     </div>
   );
 };
+

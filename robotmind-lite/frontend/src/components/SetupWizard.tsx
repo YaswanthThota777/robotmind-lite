@@ -34,7 +34,7 @@ export const SetupWizard = ({
       title: "🔵 Ackermann Steering",
       icon: "🏎️",
       description: "Parking Lots • Road Navigation • Lane-keeping & Obstacle avoidance",
-      color: "cyan",
+      color: "teal",
     },
     {
       key: "flat_ground_rover_v1",
@@ -60,7 +60,7 @@ export const SetupWizard = ({
   return (
     <div className="flex flex-col h-full">
       {/* Progress Bar */}
-      <div className="border-b border-night-700 bg-night-900 px-8 py-4">
+      <div className="border-b border-slate-800 bg-slate-950 px-8 py-4">
         <div className="flex items-center justify-between mb-2">
           <div className="text-sm font-semibold text-slate-300">
             Step {step} of {totalSteps}
@@ -71,9 +71,9 @@ export const SetupWizard = ({
             {step === 3 && "Review & Confirm"}
           </div>
         </div>
-        <div className="h-2 bg-night-800 rounded-full overflow-hidden">
+        <div className="h-2 bg-slate-900 rounded-full overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all duration-300"
+            className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-300"
             style={{ width: `${(step / totalSteps) * 100}%` }}
           />
         </div>
@@ -97,7 +97,7 @@ export const SetupWizard = ({
                   className={`group text-left rounded-2xl border-2 p-6 transition-all ${
                     config.environmentProfile === model.key
                       ? `border-${model.color}-500 bg-gradient-to-br from-${model.color}-500/20 to-${model.color}-500/5 shadow-lg scale-[1.02]`
-                      : "border-night-600 bg-night-800/60 hover:border-night-500 hover:bg-night-800"
+                      : "border-slate-700 bg-slate-900/60 hover:border-slate-600 hover:bg-slate-900"
                   }`}
                 >
                   <div className="flex items-start gap-4">
@@ -128,12 +128,12 @@ export const SetupWizard = ({
 
             <div className="space-y-6">
               {/* Algorithm */}
-              <div className="rounded-xl border border-night-600 bg-night-800/60 p-6">
+              <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-6">
                 <label className="block text-sm font-semibold text-slate-300 mb-3">
                   🧠 Learning Algorithm
                 </label>
                 <select
-                  className="w-full rounded-lg border border-night-600 bg-night-900 px-4 py-3 text-sm text-slate-200 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-200 focus:border-teal-500/50 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                   value={config.algorithm}
                   onChange={(e) =>
                     onConfigChange({ ...config, algorithm: e.target.value as TrainingConfig["algorithm"] })
@@ -151,7 +151,7 @@ export const SetupWizard = ({
               </div>
 
               {/* Training Steps */}
-              <div className="rounded-xl border border-night-600 bg-night-800/60 p-6">
+              <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-6">
                 <label className="block text-sm font-semibold text-slate-300 mb-3">
                   🎯 Training Steps
                 </label>
@@ -162,8 +162,8 @@ export const SetupWizard = ({
                       onClick={() => onConfigChange({ ...config, steps })}
                       className={`rounded-lg px-4 py-3 text-sm font-medium transition ${
                         config.steps === steps
-                          ? "bg-cyan-500/30 border-2 border-cyan-500/50 text-cyan-200"
-                          : "border-2 border-night-600 bg-night-900 text-slate-300 hover:bg-night-700"
+                          ? "bg-teal-500/30 border-2 border-teal-500/50 text-teal-200"
+                          : "border-2 border-slate-700 bg-slate-950 text-slate-300 hover:bg-slate-800"
                       }`}
                     >
                       {steps >= 1000 ? `${steps / 1000}k` : steps}
@@ -176,12 +176,12 @@ export const SetupWizard = ({
               </div>
 
               {/* Model Profile */}
-              <div className="rounded-xl border border-night-600 bg-night-800/60 p-6">
+              <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-6">
                 <label className="block text-sm font-semibold text-slate-300 mb-3">
                   🏗️ Neural Network Size
                 </label>
                 <select
-                  className="w-full rounded-lg border border-night-600 bg-night-900 px-4 py-3 text-sm text-slate-200 focus:border-cyan-500/50 focus:outline-none focus:ring-2 focus:ring-cyan-500/20"
+                  className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-slate-200 focus:border-teal-500/50 focus:outline-none focus:ring-2 focus:ring-teal-500/20"
                   value={config.modelProfile}
                   onChange={(e) => onConfigChange({ ...config, modelProfile: e.target.value })}
                 >
@@ -208,7 +208,7 @@ export const SetupWizard = ({
             </div>
 
             <div className="space-y-4">
-              <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 p-6">
+              <div className="rounded-xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 p-6">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <div className="text-slate-400 mb-1">Model Type</div>
@@ -218,11 +218,11 @@ export const SetupWizard = ({
                   </div>
                   <div>
                     <div className="text-slate-400 mb-1">Algorithm</div>
-                    <div className="text-lg font-bold text-cyan-300">{config.algorithm}</div>
+                    <div className="text-lg font-bold text-teal-300">{config.algorithm}</div>
                   </div>
                   <div>
                     <div className="text-slate-400 mb-1">Training Steps</div>
-                    <div className="text-lg font-bold text-purple-300">
+                    <div className="text-lg font-bold text-amber-300">
                       {config.steps.toLocaleString()}
                     </div>
                   </div>
@@ -235,7 +235,7 @@ export const SetupWizard = ({
                 </div>
               </div>
 
-              <div className="rounded-xl border border-night-600 bg-night-800/60 p-6">
+              <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-6">
                 <h3 className="text-sm font-semibold text-slate-300 mb-3">📊 What Happens Next</h3>
                 <ul className="space-y-2 text-sm text-slate-400">
                   <li className="flex items-start gap-2">
@@ -243,11 +243,11 @@ export const SetupWizard = ({
                     <span>Live simulation will show your robot learning in real-time</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-cyan-400">✓</span>
+                    <span className="text-teal-400">✓</span>
                     <span>Metrics chart will track reward and performance</span>
                   </li>
                   <li className="flex items-start gap-2">
-                    <span className="text-purple-400">✓</span>
+                    <span className="text-amber-400">✓</span>
                     <span>Console will log training progress and events</span>
                   </li>
                   <li className="flex items-start gap-2">
@@ -262,12 +262,12 @@ export const SetupWizard = ({
       </div>
 
       {/* Navigation Buttons */}
-      <div className="border-t border-night-700 bg-night-900 px-8 py-4">
+      <div className="border-t border-slate-800 bg-slate-950 px-8 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <button
             onClick={handleBack}
             disabled={step === 1}
-            className="rounded-lg border border-night-600 bg-night-800 px-6 py-2.5 text-sm text-slate-300 hover:bg-night-700 transition disabled:opacity-30 disabled:cursor-not-allowed"
+            className="rounded-lg border border-slate-700 bg-slate-900 px-6 py-2.5 text-sm text-slate-300 hover:bg-slate-800 transition disabled:opacity-30 disabled:cursor-not-allowed"
           >
             ← Back
           </button>
@@ -277,7 +277,7 @@ export const SetupWizard = ({
               <div
                 key={i}
                 className={`h-2 w-2 rounded-full transition ${
-                  i + 1 <= step ? "bg-emerald-400 w-6" : "bg-night-600"
+                  i + 1 <= step ? "bg-emerald-400 w-6" : "bg-slate-700"
                 }`}
               />
             ))}
@@ -295,3 +295,4 @@ export const SetupWizard = ({
     </div>
   );
 };
+

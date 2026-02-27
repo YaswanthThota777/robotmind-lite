@@ -54,6 +54,8 @@ def init_db() -> None:
                     "environment": "TEXT",
                     "model_label": "TEXT",
                     "deployment_ready": "INTEGER",
+                    "memory_mode": "TEXT",
+                    "goal_randomize": "INTEGER",
                 },
             )
             connection.execute(
@@ -93,6 +95,8 @@ def create_training_run(
     algorithm: str = "PPO",
     environment: str = "RobotEnv",
     model_label: str = "RobotMind PPO",
+    memory_mode: str | None = None,
+    goal_randomize: bool | None = None,
 ) -> int:
     """Insert a new training run and return its ID."""
     started_at = datetime.utcnow().isoformat()
@@ -106,11 +110,22 @@ def create_training_run(
                     steps,
                     algorithm,
                     environment,
-                    model_label
+                    model_label,
+                    memory_mode,
+                    goal_randomize
                 )
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (started_at, "running", steps, algorithm, environment, model_label),
+                (
+                    started_at,
+                    "running",
+                    steps,
+                    algorithm,
+                    environment,
+                    model_label,
+                    memory_mode,
+                    None if goal_randomize is None else int(goal_randomize),
+                ),
             )
             connection.commit()
             return int(cursor.lastrowid)
