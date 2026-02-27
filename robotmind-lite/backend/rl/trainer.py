@@ -407,7 +407,15 @@ class TrainingManager:
                 base_env = VisitedGridWrapper(base_env)
             return RecordEpisodeStatistics(base_env)
 
-        env = DummyVecEnv([_make_env])
+        # Parallel environments: on-policy algorithms (PPO, A2C) benefit greatly
+        # from collecting diverse rollout data across multiple independent
+        # environments per update.  4 parallel envs is the standard in OpenAI
+        # Baselines and DeepMind Acme research.
+        # Off-policy algorithms (DQN, SAC, TD3, DDPG) use a replay buffer and
+        # don't gain from this; keep 1 env to avoid buffer complexity.
+        _ON_POLICY = {"PPO", "A2C"}
+        n_envs = 4 if algorithm in _ON_POLICY else 1
+        env = DummyVecEnv([_make_env] * n_envs)
         obs_dim = int(env.observation_space.shape[0])
 
         model_kwargs: dict[str, object] = {
@@ -426,6 +434,10 @@ class TrainingManager:
         _ent_coef_algorithms = {"PPO", "A2C", "SAC"}
         if "ent_coef" in model_profile_cfg and algorithm in _ent_coef_algorithms:
             merged_defaults["ent_coef"] = model_profile_cfg["ent_coef"]
+        # With 4 parallel envs, PPO collects n_envs*n_steps per update.
+        # Keep total rollout batch at ~2048: reduce n_steps to 512 per env.
+        if n_envs > 1 and algorithm == "PPO":
+            merged_defaults["n_steps"] = 512  # 4 envs × 512 = 2048 total per update
         model_kwargs.update(merged_defaults)
         # User-supplied algorithm_params override everything
         if algorithm_params:

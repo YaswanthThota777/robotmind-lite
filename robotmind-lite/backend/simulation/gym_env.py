@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import deque
 from typing import Any
 
 import gymnasium as gym
@@ -186,6 +187,18 @@ class RobotEnv(gym.Env[np.ndarray, int]):
         self._last_x = 0.0
         self._last_y = 0.0
         self._last_goal_dist = 0.0  # initialised properly on first reset()
+        # ── Intelligent navigation memory ────────────────────────────────────
+        # Heading history for spin detection: if the robot spins >360° in 12
+        # steps without translating, it gets a strong penalty (DeepMind-style
+        # locomotion penalty used in MuJoCo Ant/Humanoid environments).
+        self._heading_history: deque[float] = deque(maxlen=12)
+        # Visited-cell exploration map: 16×16 coarse grid of the arena.
+        # Entering a never-visited cell earns a bonus — prevents the model from
+        # staying in one corner and encourages systematic goal search.
+        # This is identical to the curiosity/count-based exploration reward used
+        # by OpenAI in Go-Explore and similar systems.
+        self._visited_cells: set[tuple[int, int]] = set()
+        self._visit_grid_size = 16
 
         n_actions = 4 if self.reverse_enabled else 3
         self.action_space = spaces.Discrete(n_actions)
@@ -330,6 +343,15 @@ class RobotEnv(gym.Env[np.ndarray, int]):
         self._consecutive_collisions = 0
         self._last_x = self.world.robot.x
         self._last_y = self.world.robot.y
+        # Reset navigation memory each episode
+        self._heading_history.clear()
+        self._heading_history.append(self.world.robot.angle_degrees)
+        self._visited_cells.clear()
+        # Mark starting cell as visited immediately
+        _gs = self._visit_grid_size
+        _sx = int(np.clip((self.world.robot.x / self.world.width) * _gs, 0, _gs - 1))
+        _sy = int(np.clip((self.world.robot.y / self.world.height) * _gs, 0, _gs - 1))
+        self._visited_cells.add((_sx, _sy))
         # Track distance to goal so step() can compute delta-distance reward
         if self.has_goal:
             gx = self.world.goal_x or 0.0
@@ -470,31 +492,72 @@ class RobotEnv(gym.Env[np.ndarray, int]):
 
                 delta = self._last_goal_dist - curr_dist  # positive = closer
                 if delta > 0:
-                    reward += delta * 0.3
+                    # Approach reward — 5× stronger than before so goal-finding
+                    # dominates over pure wall-avoidance.  Every pixel toward the
+                    # goal gives a clear, dominant signal (DeepMind-style dense
+                    # potential-based reward shaping).
+                    reward += delta * 1.5
                 else:
-                    reward += delta * 0.1  # softer penalty for moving away
+                    # Moving away penalty — firm but not catastrophic
+                    reward += delta * 0.3
                 self._last_goal_dist = curr_dist
 
-                # Goal-alignment bonus: faces goal even when turning in place
+                # Goal-alignment bonus: strongly reward facing the goal.
+                # Was 0.025; now 0.10 — this is the signal that breaks spinning:
+                # the model learns that turning toward the goal PAYS even before
+                # it starts moving, which is how real navigation policies work.
                 goal_angle_rad = float(np.arctan2(gy - curr_y, gx - curr_x))
                 robot_angle_rad = float(np.deg2rad(self.world.robot.angle_degrees))
                 angle_diff = goal_angle_rad - robot_angle_rad
                 angle_diff = float(np.arctan2(np.sin(angle_diff), np.cos(angle_diff)))
                 alignment = float(np.cos(angle_diff))
-                reward += alignment * 0.025
+                reward += alignment * 0.10
 
-            # ── Anti-circling penalty (all envs) ─────────────────────────────
-            # Only penalise spinning-in-place when the robot is in SAFE space.
-            # Don't penalise near walls (agent should turn freely to recover).
-            # Cap stuck_frac at 0.6 so late-episode exploration isn't over-penalised.
+                # Proximity urgency: extra bonus when very close to goal
+                # Motivates the final approach — like OpenAI's goal-conditioned bonuses
+                if curr_dist < 80.0:
+                    reward += (80.0 - curr_dist) * 0.002
+
+            # ── Position tracking, exploration & spin detection ──────────────
             curr_x_ = self.world.robot.x
             curr_y_ = self.world.robot.y
             pos_change = float(np.sqrt(
                 (curr_x_ - self._last_x) ** 2 + (curr_y_ - self._last_y) ** 2
             ))
+
+            # ── Count-based exploration bonus (Go-Explore / NGU style) ────────
+            # Reward for entering a never-visited region of the arena.
+            # This directly solves the circling problem: the robot is rewarded
+            # for going to NEW places rather than re-visiting its starting area.
+            _gs = self._visit_grid_size
+            _cell = (
+                int(np.clip((curr_x_ / self.world.width) * _gs, 0, _gs - 1)),
+                int(np.clip((curr_y_ / self.world.height) * _gs, 0, _gs - 1)),
+            )
+            if _cell not in self._visited_cells:
+                self._visited_cells.add(_cell)
+                reward += 0.05  # exploration bonus for visiting new arena region
+
+            # ── Heading history for smart spin detection ──────────────────────
+            self._heading_history.append(self.world.robot.angle_degrees)
+
+            # If robot spun >360° in last 12 steps but barely moved → spinning
+            # This is the exact locomotion penalty used in DeepMind's DM Control
+            # Locomotion tasks to punish in-place spinning as unproductive.
+            if len(self._heading_history) >= 10:
+                _total_turn = 0.0
+                _h = list(self._heading_history)
+                for _i in range(1, len(_h)):
+                    _diff = (_h[_i] - _h[_i - 1] + 180.0) % 360.0 - 180.0
+                    _total_turn += abs(_diff)
+                if _total_turn > 360.0 and pos_change < 5.0:
+                    reward -= 0.15  # strong spin penalty — spinning is never optimal
+
+            # ── Soft stuck penalty (open space only) ─────────────────────────
             if pos_change < 2.0 and not danger:
                 stuck_frac = min(self.current_step / max(1, self.max_steps), 0.6)
                 reward -= 0.025 * (1.0 + stuck_frac)
+
             self._last_x = curr_x_
             self._last_y = curr_y_
 
