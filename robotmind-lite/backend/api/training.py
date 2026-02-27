@@ -55,6 +55,42 @@ class _TrimObsWrapper(gym.ObservationWrapper):
         return self.env.get_state()  # type: ignore[attr-defined]
 
 
+class _PadObsWrapper(gym.ObservationWrapper):
+    """Pads observations with zeros to reach `n` dims.
+
+    Used when a model was trained with more observation dimensions than the
+    current environment provides (e.g. model trained with visited-grid or goal
+    dims that the chosen test profile does not expose).  Padding with zeros is
+    neutral for every feature type used here:
+      - ray distances     → 0.0 means "wall right here" (safe pessimistic)
+      - goal dims         → 0.0 distance / direction means goal straight ahead
+      - visited-grid bits → 0 means "not yet visited" (safe neutral)
+    """
+
+    def __init__(self, env: gym.Env, n: int) -> None:
+        super().__init__(env)
+        base_low  = env.observation_space.low
+        base_high = env.observation_space.high
+        pad_len = n - len(base_low)
+        self.observation_space = gym.spaces.Box(
+            low=np.concatenate([base_low,  np.zeros(pad_len, dtype=np.float32)]),
+            high=np.concatenate([base_high, np.ones(pad_len,  dtype=np.float32)]),
+            dtype=np.float32,
+        )
+        self._n = n
+
+    def observation(self, obs: np.ndarray) -> np.ndarray:  # type: ignore[override]
+        obs_flat = np.asarray(obs, dtype=np.float32).flatten()
+        if len(obs_flat) >= self._n:
+            return obs_flat[: self._n]
+        padded = np.zeros(self._n, dtype=np.float32)
+        padded[: len(obs_flat)] = obs_flat
+        return padded
+
+    def get_state(self) -> dict[str, object]:  # type: ignore[override]
+        return self.env.get_state()  # type: ignore[attr-defined]
+
+
 class StartTrainingRequest(BaseModel):
     """Request payload to start RL training."""
 
@@ -412,16 +448,12 @@ async def test_model(payload: TestModelRequest) -> dict[str, object]:
             env = _TrimObsWrapper(env, model_obs_dim)  # type: ignore[assignment]
             obs_trimmed = True
         else:
-            env.close()
-            raise HTTPException(
-                status_code=422,
-                detail=(
-                    f"Model expects {model_obs_dim} observations but the environment "
-                    f"only provides {env_obs_dim}. "
-                    "Please choose an environment that matches how this model was trained."
-                ),
-            )
-    # Model has goal sensing if it wasn't trimmed and env has goal
+            # Env provides fewer dims than the model expects.
+            # Zero-pad the missing dims so the model can still run.
+            # Common cause: model was trained with visited-grid memory or goal
+            # dims that are absent in the chosen test environment profile.
+            env = _PadObsWrapper(env, model_obs_dim)  # type: ignore[assignment]
+    # Model has goal sensing if obs weren't trimmed and env has goal
     model_has_goal = env_has_goal and not obs_trimmed
 
     episode_rewards: list[float] = []
