@@ -147,7 +147,7 @@ export const HomePage = ({ projects, onNavigate, onDeleteProject }: HomePageProp
                   onClick={() => onNavigate("wizard")}
                   className="px-10 py-4 rounded-2xl bg-gradient-to-r from-teal-500 to-amber-500
                              hover:from-teal-400 hover:to-amber-400 text-white font-bold text-lg
-                             shadow-2xl shadow-black/40 transition-all hover:scale-105 active:scale-95"
+                             shadow-2xl shadow-black/40 transition-all hover:scale-105 active:scale-95 rm-cta-pulse"
                 >
                   Build Your First Robot →
                 </button>
@@ -180,10 +180,10 @@ export const HomePage = ({ projects, onNavigate, onDeleteProject }: HomePageProp
               A complete reinforcement learning playground — right in your browser.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {FEATURES.map((f) => (
+              {FEATURES.map((f, i) => (
                 <div
                   key={f.title}
-                  className={`rounded-2xl border bg-gradient-to-br ${f.color} p-6 flex flex-col gap-3`}
+                  className={`rounded-2xl border bg-gradient-to-br ${f.color} p-6 flex flex-col gap-3 rm-card-hover rm-fade-up rm-delay-${[75,150,225,300,375,450][i] ?? 75}`}
                 >
                   <div className="text-4xl">{f.icon}</div>
                   <div className={`text-lg font-bold ${f.accent}`}>{f.title}</div>
@@ -197,7 +197,7 @@ export const HomePage = ({ projects, onNavigate, onDeleteProject }: HomePageProp
                 onClick={() => onNavigate("wizard")}
                 className="px-12 py-4 rounded-2xl bg-gradient-to-r from-teal-500 to-amber-500
                            hover:from-teal-400 hover:to-amber-400 text-white font-bold text-lg
-                           shadow-xl shadow-black/30 transition-all hover:scale-105"
+                           shadow-xl shadow-black/30 transition-all hover:scale-105 rm-cta-pulse"
               >
                 Get Started — It's Free →
               </button>
@@ -228,13 +228,14 @@ export const HomePage = ({ projects, onNavigate, onDeleteProject }: HomePageProp
 
           {/* Project grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-            {projects.map((project) => (
-              <ProjectCard
-                key={project.id}
-                project={project}
-                onOpen={() => onNavigate("training", project.id)}
-                onDelete={() => onDeleteProject(project.id)}
-              />
+            {projects.map((project, idx) => (
+              <div key={project.id} className={`rm-fade-up rm-delay-${[75,150,225,300,375,450][idx] ?? 75}`}>
+                <ProjectCard
+                  project={project}
+                  onOpen={() => onNavigate("training", project.id)}
+                  onDelete={() => onDeleteProject(project.id)}
+                />
+              </div>
             ))}
 
             {/* Create card */}
@@ -242,8 +243,8 @@ export const HomePage = ({ projects, onNavigate, onDeleteProject }: HomePageProp
               onClick={() => onNavigate("wizard")}
               className="flex flex-col items-center justify-center gap-4 min-h-[280px]
                          rounded-2xl border-2 border-dashed border-slate-800/70
-                         hover:border-teal-500 hover:bg-teal-950/10
-                         text-slate-600 hover:text-teal-300 transition-all group"
+                         hover:border-teal-500/60 hover:bg-teal-950/10 hover:shadow-teal-sm
+                         text-slate-600 hover:text-teal-300 transition-all duration-200 group rm-fade-up"
             >
               <div className="w-16 h-16 rounded-2xl border-2 border-dashed border-current
                               flex items-center justify-center text-3xl
@@ -286,8 +287,7 @@ const ProjectCard = ({ project, onOpen, onDelete }: CardProps) => {
 
   return (
     <div className="bg-[#0b1120]/80 border border-slate-800/70 rounded-2xl overflow-hidden
-                    hover:border-slate-600 hover:shadow-xl hover:shadow-black/40
-                    transition-all group cursor-pointer"
+                    rm-card-hover group cursor-pointer"
          onClick={onOpen}>
       {/* Robot preview banner */}
       <div className="h-52 flex items-center justify-center bg-gradient-to-b from-[#0f172a] to-[#0b1120] relative">

@@ -156,7 +156,7 @@ export const RightPanel = ({
   };
 
   return (
-    <aside className="flex h-full flex-col gap-6 border-l border-slate-800 bg-gradient-to-b from-slate-950 to-slate-900 p-6 overflow-y-auto">
+    <aside className="flex h-full flex-col gap-6 border-l border-slate-800 bg-gradient-to-b from-slate-950 to-slate-900 p-6 overflow-y-auto rm-scrollbar">
 
       {/* ── Project context card (wizard flow) OR preset chooser (generic flow) ─ */}
       {project ? (
@@ -198,10 +198,10 @@ export const RightPanel = ({
             {quickPresets.map((preset) => (
               <button
                 key={preset.key}
-                className={`group rounded-xl border px-4 py-3.5 text-left transition-all ${
+                className={`group rounded-xl border px-4 py-3.5 text-left transition-all duration-200 ${
                   selectedPreset === preset.key
                     ? "border-emerald-400/60 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 shadow-lg scale-105"
-                    : "border-slate-700 bg-slate-900/60 hover:border-emerald-500/30 hover:bg-slate-800/80"
+                    : "border-slate-700 bg-slate-900/60 hover:border-teal-500/40 hover:bg-teal-950/20 hover:scale-[1.02]"
                 }`}
                 onClick={() => applyPreset(preset.key)}
               >
@@ -410,7 +410,7 @@ export const RightPanel = ({
           <div className="text-xs uppercase tracking-[0.3em] text-amber-400">Sensor Data</div>
           <div className="text-xs text-slate-400">{sensors.length} sensor{sensors.length !== 1 ? "s" : ""}</div>
         </div>
-        <div className="space-y-2 max-h-72 overflow-y-auto text-xs">
+        <div className="space-y-2 max-h-72 overflow-y-auto rm-scrollbar text-xs">
           {sensors.length === 0 ? (
             <div className="rounded-lg border border-slate-700 bg-slate-950/40 px-3 py-6 text-center text-slate-500 italic">
               No sensor data — start simulation

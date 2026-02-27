@@ -46,15 +46,22 @@ export const ConsolePanel = ({ messages }: ConsolePanelProps) => {
       </button>
 
       {open && (
-        <div className="max-h-28 overflow-y-auto px-4 pb-2 space-y-1">
-          {messages.map((message, index) => (
-            <div
-              key={`${message}-${index}`}
-              className={`text-xs font-mono py-0.5 ${getMessageColor(message)}`}
-            >
-              {message}
+        <div className="max-h-28 overflow-y-auto rm-scrollbar px-4 pb-2 space-y-1">
+          {messages.length === 0 ? (
+            <div className="flex items-center gap-2 py-3 text-xs text-slate-600 italic">
+              <span>—</span>
+              <span>No logs yet. Start training or run a test to see output.</span>
             </div>
-          ))}
+          ) : (
+            messages.map((message, index) => (
+              <div
+                key={`${message}-${index}`}
+                className={`text-xs font-mono py-0.5 ${getMessageColor(message)}`}
+              >
+                {message}
+              </div>
+            ))
+          )}
         </div>
       )}
     </div>

@@ -170,24 +170,44 @@ export const ModelManager = ({ apiBase, onClose, onTestPlaybackStart, onTestPlay
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+        <div className="p-6 overflow-y-auto rm-scrollbar max-h-[calc(90vh-120px)]">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin h-8 w-8 border-4 border-emerald-500 border-t-transparent rounded-full"></div>
+            <div className="space-y-3">
+              {[0,1,2].map((i) => (
+                <div key={i} className="rounded-xl border border-slate-800 p-4 space-y-3">
+                  <div className="flex gap-3">
+                    <div className="rm-skeleton h-5 w-20" />
+                    <div className="rm-skeleton h-5 w-16" />
+                    <div className="rm-skeleton h-5 w-24" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rm-skeleton h-4 w-full" />
+                    <div className="rm-skeleton h-4 w-full" />
+                  </div>
+                  <div className="rm-skeleton h-3 w-32" />
+                </div>
+              ))}
             </div>
           ) : runs.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-slate-400">No trained models yet. Start training to see models here.</p>
+            <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-slate-800/60 border border-slate-700/60
+                              flex items-center justify-center text-3xl">
+                🧠
+              </div>
+              <div>
+                <div className="text-slate-300 font-semibold text-base">No models yet</div>
+                <div className="text-slate-500 text-sm mt-1">Train a robot to see your models here.</div>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
               {runs.map((run, index) => (
                 <div
                   key={run.run_id ?? `run-${index}`}
-                  className={`border rounded-xl p-4 transition-all cursor-pointer ${
+                  className={`border rounded-xl p-4 transition-all duration-200 cursor-pointer ${
                     selectedRun === run.run_id
-                      ? "border-emerald-500 bg-emerald-500/10"
-                      : "border-slate-700 bg-slate-800/40 hover:border-slate-600 hover:bg-slate-800/60"
+                      ? "border-teal-500/70 bg-teal-500/10 shadow-teal-sm"
+                      : "border-slate-700/60 bg-slate-800/30 hover:border-teal-500/40 hover:bg-teal-950/20"
                   }`}
                   onClick={() => setSelectedRun(selectedRun === run.run_id ? null : run.run_id)}
                 >

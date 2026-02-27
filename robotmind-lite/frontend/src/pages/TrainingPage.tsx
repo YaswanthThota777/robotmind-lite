@@ -535,7 +535,7 @@ export const TrainingPage = ({
       <div className="flex-1 flex overflow-hidden min-h-0">
 
         {/* Left panel - robot identity + specs */}
-        <aside className="w-[220px] flex-shrink-0 flex flex-col gap-3 p-4 overflow-y-auto
+        <aside className="w-[220px] flex-shrink-0 flex flex-col gap-3 p-4 overflow-y-auto rm-scrollbar
               border-r border-slate-800/60 bg-[#0b1120]/70">
           {/* Robot preview */}
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-3
@@ -617,8 +617,18 @@ export const TrainingPage = ({
                   } : undefined}
                 />
               ) : (
-                <div className="flex h-full items-center justify-center">
-                  <span className="text-slate-400 text-sm animate-pulse">Preparing simulation environment...</span>
+                <div className="flex h-full flex-col items-center justify-center gap-5 p-10">
+                  <div className="flex flex-col gap-3 w-full max-w-sm">
+                    <div className="rm-skeleton h-4 w-3/4 mx-auto" />
+                    <div className="rm-skeleton h-4 w-1/2 mx-auto" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3 w-full max-w-sm">
+                    <div className="rm-skeleton h-16" />
+                    <div className="rm-skeleton h-16" />
+                    <div className="rm-skeleton h-16" />
+                  </div>
+                  <div className="rm-skeleton h-32 w-full max-w-sm" />
+                  <p className="text-slate-500 text-xs tracking-wide">Syncing environment&hellip;</p>
                 </div>
               )}
             </div>
@@ -646,7 +656,7 @@ export const TrainingPage = ({
             ))}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3 space-y-3">
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 rm-scrollbar">
             {activeTab === "control" && (
               <>
                 {/* Live stats strip - visible at a glance, no scrolling needed */}

@@ -95,7 +95,7 @@ class StartTrainingRequest(BaseModel):
     """Request payload to start RL training."""
 
     steps: int = Field(default=5000, ge=200, le=5_000_000)
-    algorithm: str = Field(default="PPO", pattern="(?i)^(PPO|A2C|DQN|SAC|TD3|DDPG)$")
+    algorithm: str = Field(default="PPO", pattern="(?i)^(PPO|PPO_LSTM|A2C|DQN|SAC|TD3|DDPG)$")
     environment_profile: str = Field(default="arena_basic")
     model_profile: str = Field(default="balanced")
     custom_environment: dict[str, object] | None = None
@@ -170,6 +170,12 @@ async def start_training(payload: StartTrainingRequest) -> dict[str, object]:
                 custom_model = template_custom_model
             if isinstance(template_algorithm_params, dict):
                 algorithm_params = template_algorithm_params
+            template_memory_mode = template.get("memory_mode")
+            if isinstance(template_memory_mode, str) and template_memory_mode in {"standard", "visited_grid"}:
+                memory_mode = template_memory_mode
+            template_goal_randomize = template.get("goal_randomize")
+            if isinstance(template_goal_randomize, bool):
+                goal_randomize = template_goal_randomize
 
         if goal_randomize is not None:
             if custom_environment is None:

@@ -56,8 +56,13 @@ export const TrainingAnalytics = ({ apiBase, runId }: AnalyticsProps) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin h-6 w-6 border-3 border-teal-500 border-t-transparent rounded-full"></div>
+      <div className="space-y-4">
+        <div className="grid grid-cols-4 gap-3">
+          {[0,1,2,3].map((i) => (
+            <div key={i} className="rm-skeleton h-16 rounded-lg" />
+          ))}
+        </div>
+        <div className="rm-skeleton h-52 rounded-lg" />
       </div>
     );
   }
@@ -66,35 +71,27 @@ export const TrainingAnalytics = ({ apiBase, runId }: AnalyticsProps) => {
     <div className="space-y-4">
       {stats && (
         <div className="grid grid-cols-4 gap-3">
-          <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-3">
+          <div className="rm-glass rounded-lg p-3 rm-card-hover">
             <div className="text-xs text-slate-500 mb-1">Average Reward</div>
-            <div className="text-lg font-bold text-teal-300">
-              {stats.avgReward.toFixed(2)}
-            </div>
+            <div className="text-lg font-bold text-teal-300">{stats.avgReward.toFixed(2)}</div>
           </div>
-          <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-3">
+          <div className="rm-glass rounded-lg p-3 rm-card-hover">
             <div className="text-xs text-slate-500 mb-1">Best Reward</div>
-            <div className="text-lg font-bold text-emerald-300">
-              {stats.maxReward.toFixed(2)}
-            </div>
+            <div className="text-lg font-bold text-emerald-300">{stats.maxReward.toFixed(2)}</div>
           </div>
-          <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-3">
+          <div className="rm-glass rounded-lg p-3 rm-card-hover">
             <div className="text-xs text-slate-500 mb-1">Recent Avg (20 ep)</div>
-            <div className="text-lg font-bold text-amber-300">
-              {stats.recentAvg.toFixed(2)}
-            </div>
+            <div className="text-lg font-bold text-amber-300">{stats.recentAvg.toFixed(2)}</div>
           </div>
-          <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-3">
+          <div className="rm-glass rounded-lg p-3 rm-card-hover">
             <div className="text-xs text-slate-500 mb-1">Total Episodes</div>
-            <div className="text-lg font-bold text-amber-300">
-              {metrics.length}
-            </div>
+            <div className="text-lg font-bold text-amber-300">{metrics.length}</div>
           </div>
         </div>
       )}
 
-      <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-4">
-        <div className="text-sm font-semibold text-slate-300 mb-3">Reward Trend</div>
+      <div className="rm-glass rounded-lg p-4">
+        <div className="rm-section-label mb-3">Reward Trend</div>
         <div className="relative h-48">
           <svg viewBox="0 0 500 150" className="w-full h-full">
             <defs>

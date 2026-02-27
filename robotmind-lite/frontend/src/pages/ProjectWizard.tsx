@@ -404,8 +404,8 @@ export const ProjectWizard = ({
       </div>
 
       {/* Step content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-8 py-10 rm-fade-up">
+      <div className="flex-1 overflow-y-auto rm-scrollbar">
+        <div key={step} className="max-w-5xl mx-auto px-8 py-10 rm-fade-up">
           {step === 1 && (
             <StepWrapper title="Design Your Robot"
               subtitle="Choose a body shape, movement type and physical properties.">
@@ -421,10 +421,10 @@ export const ProjectWizard = ({
                   <button
                     key={env.key}
                     onClick={() => setEnvProfile(env.key)}
-                    className={`flex gap-4 items-start p-4 rounded-2xl border text-left transition-all
+                    className={`flex gap-4 items-start p-4 rounded-2xl border text-left transition-all duration-200
                       ${envProfile === env.key
-                        ? "border-teal-400/70 bg-teal-500/10"
-                        : "border-slate-800/70 bg-[#0b1120]/70 hover:border-slate-600"}`}
+                        ? "border-teal-400/70 bg-teal-500/10 shadow-teal-sm"
+                        : "border-slate-800/70 bg-[#0b1120]/70 hover:border-teal-500/40 hover:bg-teal-900/10 hover:scale-[1.02]"}`}
                   >
                     <span className="text-3xl mt-0.5 flex-shrink-0">{env.icon}</span>
                     <div>
@@ -457,10 +457,10 @@ export const ProjectWizard = ({
                   <button
                     key={algo.key}
                     onClick={() => setAlgorithm(algo.key)}
-                    className={`flex flex-col gap-3 p-5 rounded-2xl border text-left transition-all
+                    className={`flex flex-col gap-3 p-5 rounded-2xl border text-left transition-all duration-200
                       ${algorithm === algo.key
-                        ? "border-teal-500/70 bg-teal-500/10"
-                        : "border-slate-800/70 bg-[#0b1120]/70 hover:border-slate-600"}`}
+                        ? "border-teal-500/70 bg-teal-500/10 shadow-teal-sm"
+                        : "border-slate-800/70 bg-[#0b1120]/70 hover:border-teal-500/40 hover:bg-teal-900/10 hover:scale-[1.02]"}`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -517,12 +517,12 @@ export const ProjectWizard = ({
                         <button
                           key={m.key}
                           onClick={() => setModelProfile(m.key)}
-                          className={`w-full flex gap-4 items-center p-4 rounded-xl border text-left transition-all
+                          className={`w-full flex gap-4 items-center p-4 rounded-xl border text-left transition-all duration-200
                             ${modelProfile === m.key
-                              ? "border-teal-500/70 bg-teal-500/10"
+                              ? "border-teal-500/70 bg-teal-500/10 shadow-teal-sm"
                               : isSuggested
-                              ? "border-amber-500/50 bg-amber-900/10 hover:border-amber-400"
-                              : "border-slate-800/70 bg-[#0b1120]/70 hover:border-slate-600"}`}
+                              ? "border-amber-500/50 bg-amber-900/10 hover:border-amber-400 hover:scale-[1.01]"
+                              : "border-slate-800/70 bg-[#0b1120]/70 hover:border-teal-500/40 hover:bg-teal-900/10 hover:scale-[1.01]"}`}
                         >
                           <span className="text-2xl">{m.icon}</span>
                           <div className="flex-1">
@@ -627,7 +627,7 @@ export const ProjectWizard = ({
                         className={`rounded-lg border px-3 py-2 text-left text-xs transition-all
                           ${memoryMode === "visited_grid"
                             ? "border-teal-500/70 bg-teal-500/10 text-teal-200"
-                            : "border-slate-800/70 bg-[#0b1120] text-slate-400 hover:border-slate-600"}`}
+                            : "border-slate-800/70 bg-[#0b1120] text-slate-400 hover:border-teal-500/40 hover:bg-teal-900/10"}`}
                       >
                         <div className="font-semibold">Intelligent</div>
                         <div className="text-[11px] text-slate-500">Visited grid memory (recommended)</div>
@@ -637,7 +637,7 @@ export const ProjectWizard = ({
                         className={`rounded-lg border px-3 py-2 text-left text-xs transition-all
                           ${memoryMode === "standard"
                             ? "border-teal-500/70 bg-teal-500/10 text-teal-200"
-                            : "border-slate-800/70 bg-[#0b1120] text-slate-400 hover:border-slate-600"}`}
+                            : "border-slate-800/70 bg-[#0b1120] text-slate-400 hover:border-teal-500/40 hover:bg-teal-900/10"}`}
                       >
                         <div className="font-semibold">Standard</div>
                         <div className="text-[11px] text-slate-500">No memory (faster)</div>
@@ -735,7 +735,7 @@ export const ProjectWizard = ({
         <button
           onClick={() => (step > 1 ? setStep(step - 1) : onNavigate("home"))}
           className="px-5 py-2.5 rounded-xl bg-[#0b1120]/80 border border-slate-800/70
-                     hover:border-slate-600 text-slate-300 text-sm font-medium transition-all"
+                     hover:border-teal-700/50 hover:text-teal-300 text-slate-300 text-sm font-medium transition-all duration-200"
         >
           ← Back
         </button>

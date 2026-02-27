@@ -23,7 +23,7 @@ export const Sidebar = ({ project }: SidebarProps) => {
     // -- Project-aware sidebar ------------------------------------------------
     const { robot, algorithm, environmentProfile, modelProfile, steps, status } = project;
     return (
-      <aside className="flex h-full flex-col gap-5 bg-gradient-to-b from-slate-950 to-slate-900 p-5 shadow-2xl overflow-y-auto">
+      <aside className="flex h-full flex-col gap-5 bg-gradient-to-b from-slate-950 to-slate-900 p-5 shadow-2xl overflow-y-auto rm-scrollbar">
         {/* Robot preview */}
         <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 flex flex-col items-center gap-3">
           <RobotPreviewSVG design={robot} size={130} />
@@ -37,14 +37,14 @@ export const Sidebar = ({ project }: SidebarProps) => {
 
         {/* Robot stats */}
         <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-2">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-amber-400 mb-2">Robot Config</div>
+          <div className="rm-section-label mb-2">Robot Config</div>
           {[
             ["Shape",     robot.shape],
             ["Movement",  robot.movementType],
-            ["Sensors",   `${robot.sensors.count} rays • ${robot.sensors.fov}° FOV`],
+            ["Sensors",   `${robot.sensors.count} rays ï¿½ ${robot.sensors.fov}ï¿½ FOV`],
             ["Range",     `${robot.sensors.range} px`],
             ["Speed",     `${robot.speed} px/s`],
-            ["Turn",      `${robot.turnRate}°/step`],
+            ["Turn",      `${robot.turnRate}ï¿½/step`],
           ].map(([label, value]) => (
             <div key={label} className="flex items-center justify-between text-xs">
               <span className="text-slate-500">{label}</span>
@@ -55,7 +55,7 @@ export const Sidebar = ({ project }: SidebarProps) => {
 
         {/* Training config */}
         <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-2">
-          <div className="text-[10px] uppercase tracking-[0.3em] text-teal-400 mb-2">Training Config</div>
+          <div className="rm-section-label mb-2">Training Config</div>
           {[
             ["Algorithm",    algorithm],
             ["Environment",  environmentProfile.replace(/_v\d+$/, "").replaceAll("_", " ")],
@@ -101,7 +101,7 @@ export const Sidebar = ({ project }: SidebarProps) => {
         {FEATURES.map((item) => (
           <div
             key={item.label}
-            className="flex items-start gap-3 rounded-xl border border-slate-700 bg-slate-800/40 p-3 transition hover:border-emerald-500/30 hover:bg-slate-800"
+            className="flex items-start gap-3 rounded-xl border border-slate-700/60 bg-slate-800/30 p-3 transition-all duration-200 hover:border-teal-600/40 hover:bg-teal-950/20 hover:shadow-teal-sm"
           >
             <span className="text-2xl">{item.icon}</span>
             <div className="flex-1">
@@ -122,7 +122,7 @@ export const Sidebar = ({ project }: SidebarProps) => {
           </div>
           <div className="flex items-center justify-between">
             <span>Algorithms</span>
-            <span className="text-teal-300">PPO • A2C • DQN</span>
+            <span className="text-teal-300">PPO ï¿½ A2C ï¿½ DQN</span>
           </div>
           <div className="flex items-center justify-between">
             <span>Export</span>

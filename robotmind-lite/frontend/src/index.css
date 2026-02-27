@@ -84,3 +84,64 @@ body {
   animation: slide-in-right 0.3s ease-out;
 }
 
+/* ── Custom teal scrollbar ─────────────────────────────────────── */
+.rm-scrollbar::-webkit-scrollbar            { width: 4px; height: 4px; }
+.rm-scrollbar::-webkit-scrollbar-track      { background: transparent; }
+.rm-scrollbar::-webkit-scrollbar-thumb      { background: rgba(20,184,166,.35); border-radius: 9999px; }
+.rm-scrollbar::-webkit-scrollbar-thumb:hover{ background: rgba(20,184,166,.65); }
+.rm-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(20,184,166,.35) transparent; }
+
+/* ── Glassmorphism card ────────────────────────────────────────── */
+.rm-glass {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* ── Stagger animation delays ──────────────────────────────────── */
+.rm-delay-75  { animation-delay:  75ms; animation-fill-mode: both; }
+.rm-delay-150 { animation-delay: 150ms; animation-fill-mode: both; }
+.rm-delay-225 { animation-delay: 225ms; animation-fill-mode: both; }
+.rm-delay-300 { animation-delay: 300ms; animation-fill-mode: both; }
+.rm-delay-375 { animation-delay: 375ms; animation-fill-mode: both; }
+.rm-delay-450 { animation-delay: 450ms; animation-fill-mode: both; }
+
+/* ── Skeleton shimmer ───────────────────────────────────────────── */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .4; }
+}
+.rm-skeleton {
+  animation: skeleton-pulse 1.8s cubic-bezier(.4,0,.6,1) infinite;
+  background: rgba(51,65,85,.55);
+  border-radius: .5rem;
+}
+
+/* ── Section label ─────────────────────────────────────────────── */
+.rm-section-label {
+  font-size: .65rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #14b8a6;
+}
+
+/* ── Teal glow hover on cards ──────────────────────────────────── */
+.rm-card-hover {
+  transition: transform .2s ease-out, box-shadow .2s ease-out, border-color .2s ease-out;
+}
+.rm-card-hover:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 0 20px rgba(20,184,166,.2), 0 8px 32px rgba(0,0,0,.4);
+  border-color: rgba(20,184,166,.35);
+}
+
+/* ── Pulse ring for primary CTA ────────────────────────────────── */
+@keyframes cta-ring {
+  0%  { box-shadow: 0 0 0 0   rgba(20,184,166,.5); }
+  70% { box-shadow: 0 0 0 10px rgba(20,184,166,0); }
+  100%{ box-shadow: 0 0 0 0   rgba(20,184,166,0); }
+}
+.rm-cta-pulse { animation: cta-ring 2s ease-out infinite; }
+

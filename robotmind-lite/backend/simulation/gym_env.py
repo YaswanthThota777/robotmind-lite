@@ -452,6 +452,29 @@ class RobotEnv(gym.Env[np.ndarray, int]):
             ray_distances = observation[: self.ray_count]
             min_dist = float(np.min(ray_distances))
             mean_dist = float(np.mean(ray_distances))
+            front_min = min_dist
+            left_min = min_dist
+            right_min = min_dist
+
+            if self.ray_count >= 3:
+                if self.sensor_angles is not None and len(self.sensor_angles) == self.ray_count:
+                    normalized_angles = [((float(a) + 180.0) % 360.0) - 180.0 for a in self.sensor_angles]
+                    front_idx = [i for i, angle in enumerate(normalized_angles) if abs(angle) <= 35.0]
+                    left_idx = [i for i, angle in enumerate(normalized_angles) if angle > 20.0]
+                    right_idx = [i for i, angle in enumerate(normalized_angles) if angle < -20.0]
+                else:
+                    center = (self.ray_count - 1) / 2.0
+                    front_span = max(1, int(round(self.ray_count * 0.22)))
+                    front_idx = [i for i in range(self.ray_count) if abs(i - center) <= front_span]
+                    left_idx = [i for i in range(self.ray_count) if i > center + 0.5]
+                    right_idx = [i for i in range(self.ray_count) if i < center - 0.5]
+
+                if front_idx:
+                    front_min = float(np.min(ray_distances[front_idx]))
+                if left_idx:
+                    left_min = float(np.min(ray_distances[left_idx]))
+                if right_idx:
+                    right_min = float(np.min(ray_distances[right_idx]))
 
             # ── Per-step survival bonus ───────────────────────────────────────
             # Staying alive is ALWAYS better than dying.  This small constant
@@ -490,6 +513,25 @@ class RobotEnv(gym.Env[np.ndarray, int]):
                     reward -= 0.015
                     if action in {1, 2}:
                         reward -= 0.008
+
+            # ── Directional sensor-action coupling ───────────────────────────
+            # Make obstacle handling explicit: moving forward into short front
+            # clearance is strongly punished; turning toward the safer side is
+            # rewarded in danger.
+            if action == 0 and front_min < 0.18:
+                reward -= 0.25 + (0.18 - front_min) * 2.0
+
+            if action in {1, 2} and front_min < 0.25:
+                turned_to_safer_side = (action == 1 and left_min > right_min) or (
+                    action == 2 and right_min > left_min
+                )
+                if turned_to_safer_side:
+                    reward += 0.05 + max(0.0, 0.25 - front_min) * 0.4
+                else:
+                    reward -= 0.03
+
+            if action == 3 and self.reverse_enabled and front_min < 0.20:
+                reward += 0.08
 
             # ── Goal-directed rewards (only for goal environments) ────────────
             if self.has_goal:

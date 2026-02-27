@@ -5,6 +5,20 @@ from __future__ import annotations
 from typing import Any
 
 TRAINING_TEMPLATES: dict[str, dict[str, Any]] = {
+    "smart-nav-intelligent-v2": {
+        "label": "Smart Nav Intelligent V2",
+        "description": "High-intelligence navigation preset with recurrent memory and curriculum randomization.",
+        "algorithm": "PPO_LSTM",
+        "environment_profile": "smart_nav_v1",
+        "model_profile": "navigator",
+        "memory_mode": "visited_grid",
+        "algorithm_params": {
+            "n_steps": 2048,
+            "batch_size": 128,
+            "ent_coef": 0.025,
+            "gamma": 0.999,
+        },
+    },
     "flat-ground-differential-v1": {
         "label": "Flat Ground Differential V1",
         "description": "Version 1 baseline on flat ground using differential-drive behavior.",
