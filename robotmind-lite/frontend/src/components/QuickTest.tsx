@@ -291,6 +291,59 @@ export const QuickTest = ({
     }
   };
 
+  // Re-run inference for ONE fresh episode — does NOT replay the same frames.
+  // Called by the "New Episode" button so users can test varied behaviour.
+  const runNewEpisode = async () => {
+    if (!runId) return;
+    setLoading(true);
+    setError(null);
+    setPlayFrames(null);
+    setPlayPlaying(false);
+    setShowSim(false);
+    onPlaybackStop();
+    let customEnvironment: Record<string, unknown> | undefined;
+    if (customJson.trim()) {
+      try { customEnvironment = JSON.parse(customJson); }
+      catch { setLoading(false); setError("Custom JSON is invalid."); return; }
+    }
+    try {
+      const goalRandomizeValue = selectedEnvSummary?.has_goal ? goalRandomize : undefined;
+      const res = await fetch(`${apiBase}/test-model`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          run_id: runId,
+          episodes: 1,
+          environment_profile: envProfile,
+          deterministic,
+          max_steps: maxSteps,
+          record_trajectory: true,
+          record_episode: 0,
+          frame_skip: 1,
+          memory_mode: memoryMode,
+          ...(goalRandomizeValue !== undefined ? { goal_randomize: goalRandomizeValue } : {}),
+          ...(customEnvironment ? { custom_environment: customEnvironment } : {}),
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(typeof err.detail === "string" ? err.detail : "Episode failed");
+      }
+      const data: TestResult = await res.json();
+      if (data.trajectory && data.trajectory.length > 0) {
+        setPlayFrames(data.trajectory);
+        setPlayIndex(0);
+        setPlayPlaying(true);
+        setShowSim(true);
+        onPlaybackStart(data.trajectory);
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Episode failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const rewardColor = (v: number) =>
     v > 5 ? "text-emerald-300" : v > 0 ? "text-teal-300" : "text-red-300";
 
@@ -343,6 +396,24 @@ export const QuickTest = ({
                   ⚠️ No completed runs found. Train a model first.
                 </div>
               )}
+              {/* Warn when selected model was trained with very few steps */}
+              {runId && (() => {
+                const run = runs.find(r => r.run_id === runId);
+                if (!run) return null;
+                if (run.total_steps < 50000) return (
+                  <div className="mt-2 rounded-lg border border-red-500/40 bg-red-900/20 p-2 text-xs text-red-300">
+                    ⚠️ <strong>This model was trained with only {run.total_steps.toLocaleString()} steps</strong> — too few to learn wall avoidance.
+                    It will likely still hit walls. <strong>Retrain with at least 100k steps</strong> using the updated reward system for good results.
+                  </div>
+                );
+                if (run.total_steps < 100000) return (
+                  <div className="mt-2 rounded-lg border border-amber-500/40 bg-amber-900/20 p-2 text-xs text-amber-300">
+                    ⚡ This model used {run.total_steps.toLocaleString()} steps — may still show wall-hitting behaviour.
+                    100k+ steps recommended for reliable navigation.
+                  </div>
+                );
+                return null;
+              })()}
             </div>
 
             {/* ── Environment Selector ── */}
@@ -570,33 +641,48 @@ export const QuickTest = ({
 
                 {/* Playback controls */}
                 {playFrames && playFrames.length > 0 && (
-                  <div className="flex gap-2 pt-1">
+                  <div className="space-y-2 pt-1">
+                    {/* NEW EPISODE row — re-runs the model with fresh randomisation */}
                     <button
-                      onClick={() => { setPlayIndex(0); setPlayPlaying(true); setShowSim(true); }}
-                      className="flex-1 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r
-                                 from-teal-600 to-blue-600 hover:from-teal-500 hover:to-blue-500
-                                 text-white transition-all"
+                      onClick={runNewEpisode}
+                      disabled={loading}
+                      className="w-full py-2 rounded-lg text-xs font-semibold bg-gradient-to-r
+                                 from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500
+                                 text-white transition-all disabled:opacity-50"
                     >
-                      {playPlaying ? "↺ Restart" : showSim ? "▶ Replay" : "▶ Show Simulation"}
+                      {loading ? "Running…" : "🔄 New Episode — run model again (fresh spawn & goal)"}
                     </button>
-                    {playPlaying && (
+                    {/* Replay row — loops the SAME recorded frames */}
+                    <div className="flex gap-2">
                       <button
-                        onClick={() => setPlayPlaying(false)}
-                        className="px-4 py-2 rounded-lg text-xs font-semibold border border-slate-700
+                        onClick={() => { setPlayIndex(0); setPlayPlaying(true); setShowSim(true); }}
+                        className="flex-1 py-1.5 rounded-lg text-xs font-medium border border-slate-700
                                    bg-slate-900 text-slate-300 hover:text-white transition-colors"
                       >
-                        ⏸
+                        {playPlaying ? "↺ Restart same" : showSim ? "▶ Replay same" : "▶ Play recording"}
                       </button>
-                    )}
-                    {showSim && (
-                      <button
-                        onClick={() => setShowSim(false)}
-                        className="px-3 py-2 rounded-lg text-xs border border-slate-700
-                                   bg-slate-900 text-slate-400 hover:text-slate-200 transition-colors"
-                      >
-                        ✕ Hide
-                      </button>
-                    )}
+                      {playPlaying && (
+                        <button
+                          onClick={() => setPlayPlaying(false)}
+                          className="px-4 py-1.5 rounded-lg text-xs border border-slate-700
+                                     bg-slate-900 text-slate-300 hover:text-white transition-colors"
+                        >
+                          ⏸
+                        </button>
+                      )}
+                      {showSim && (
+                        <button
+                          onClick={() => setShowSim(false)}
+                          className="px-3 py-1.5 rounded-lg text-xs border border-slate-700
+                                     bg-slate-900 text-slate-400 hover:text-slate-200 transition-colors"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                    <div className="text-xs text-slate-600 text-center">
+                      🔄 runs fresh inference · ▶ plays recorded frames
+                    </div>
                   </div>
                 )}
               </div>
