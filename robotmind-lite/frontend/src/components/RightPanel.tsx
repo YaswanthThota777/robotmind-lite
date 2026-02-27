@@ -76,6 +76,20 @@ export const RightPanel = ({
 
   const quickPresets = [
     {
+      key: "smart_nav_v1",
+      title: "🧠 Smart Navigator",
+      subtitle: "LSTM Memory + 8 Arenas",
+      description:
+        "Maximum intelligence: LSTM memory, 24 sensors, 300° FOV, 8 diverse arenas. Recommended 300k+ steps.",
+      icon: "🧠",
+      config: {
+        environmentProfile: "smart_nav_v1",
+        algorithm: "PPO_LSTM",
+        modelProfile: "navigator",
+        steps: 300000,
+      },
+    },
+    {
       key: "flat_diff_v1",
       title: "🟢 Differential Drive",
       subtitle: "V1 Flat-Ground",

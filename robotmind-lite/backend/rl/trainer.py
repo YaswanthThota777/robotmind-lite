@@ -15,7 +15,14 @@ from gymnasium.wrappers import RecordEpisodeStatistics
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.base_class import BaseAlgorithm
 from stable_baselines3.common.callbacks import BaseCallback, CallbackList
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
+
+try:
+    from sb3_contrib import RecurrentPPO as _RecurrentPPO
+    _LSTM_AVAILABLE = True
+except ImportError:
+    _RecurrentPPO = None  # type: ignore[assignment]
+    _LSTM_AVAILABLE = False
 
 from backend.config import settings
 from backend.database import (
@@ -44,6 +51,12 @@ SUPPORTED_ALGORITHMS: dict[str, dict[str, object]] = {
         "class": PPO,
         "model_label": "RobotMind PPO",
         "artifact_prefix": "ppo",
+        "control_mode": "discrete",
+    },
+    "PPO_LSTM": {
+        "class": _RecurrentPPO,  # falls back to PPO if sb3-contrib not installed
+        "model_label": "RobotMind PPO+LSTM",
+        "artifact_prefix": "ppo_lstm",
         "control_mode": "discrete",
     },
     "A2C": {
@@ -132,6 +145,17 @@ ALGORITHM_DEFAULTS: dict[str, dict[str, object]] = {
         "learning_starts": 1_000,
         "batch_size": 256,
         "gamma": 0.995,
+    },
+    # RecurrentPPO (LSTM) defaults — uses n_steps per env (single env),
+    # smaller batch to fit LSTM sequences, higher gamma for long-horizon planning.
+    "PPO_LSTM": {
+        "n_steps": 2048,
+        "batch_size": 128,
+        "gae_lambda": 0.95,
+        "gamma": 0.9995,
+        "ent_coef": 0.02,
+        "clip_range": 0.2,
+        "n_epochs": 10,
     },
 }
 
@@ -413,15 +437,41 @@ class TrainingManager:
         # Baselines and DeepMind Acme research.
         # Off-policy algorithms (DQN, SAC, TD3, DDPG) use a replay buffer and
         # don't gain from this; keep 1 env to avoid buffer complexity.
+        # PPO_LSTM (RecurrentPPO) uses 1 env: hidden state is per-env and SB3's
+        # recurrent rollout buffer doesn't vectorise cleanly across episodes.
         _ON_POLICY = {"PPO", "A2C"}
         n_envs = 4 if algorithm in _ON_POLICY else 1
-        env = DummyVecEnv([_make_env] * n_envs)
-        obs_dim = int(env.observation_space.shape[0])
+        vec_env = DummyVecEnv([_make_env] * n_envs)
+        obs_dim = int(vec_env.observation_space.shape[0])
 
+        # VecNormalize: normalise observations to zero-mean/unit-variance and
+        # normalise rewards.  This is the single most important training
+        # stabilisation technique used in production RL (OpenAI Five, AlphaStar).
+        # Without it, raw pixel-distance observations have inconsistent scales
+        # that make gradient descent unstable.
+        _NORMALIZE_ALGOS = {"PPO", "PPO_LSTM", "A2C"}
+        if algorithm in _NORMALIZE_ALGOS:
+            env: Any = VecNormalize(
+                vec_env,
+                norm_obs=True,
+                norm_reward=True,
+                clip_obs=10.0,
+                clip_reward=10.0,
+                gamma=0.9995,
+            )
+        else:
+            env = vec_env
+
+        # Strip internal-only flags from policy_kwargs before handing to SB3.
+        # 'use_lstm' is our own marker telling the trainer to use MlpLstmPolicy;
+        # it is not a valid SB3 policy_kwargs key and would cause an error.
+        import copy as _copy
+        _policy_kwargs = _copy.deepcopy(dict(model_profile_cfg["policy_kwargs"]))
+        _policy_kwargs.pop("use_lstm", None)  # remove if present
         model_kwargs: dict[str, object] = {
             "verbose": 0,
             "device": "cpu",
-            "policy_kwargs": model_profile_cfg["policy_kwargs"],
+            "policy_kwargs": _policy_kwargs,
             "learning_rate": model_profile_cfg["learning_rate"],
         }
         # Apply algorithm-specific defaults (stable learning baselines per algorithm)
@@ -430,8 +480,8 @@ class TrainingManager:
         merged_defaults = {**algo_defaults}
         if "gamma" in model_profile_cfg:
             merged_defaults["gamma"] = model_profile_cfg["gamma"]
-        # ent_coef is only valid for on-policy (PPO, A2C) and SAC
-        _ent_coef_algorithms = {"PPO", "A2C", "SAC"}
+        # ent_coef is only valid for on-policy (PPO, PPO_LSTM, A2C) and SAC
+        _ent_coef_algorithms = {"PPO", "PPO_LSTM", "A2C", "SAC"}
         if "ent_coef" in model_profile_cfg and algorithm in _ent_coef_algorithms:
             merged_defaults["ent_coef"] = model_profile_cfg["ent_coef"]
         # With 4 parallel envs, PPO collects n_envs*n_steps per update.
@@ -443,7 +493,21 @@ class TrainingManager:
         if algorithm_params:
             model_kwargs.update(algorithm_params)
 
-        model: BaseAlgorithm = model_class("MlpPolicy", env, **model_kwargs)
+        # PPO_LSTM uses MlpLstmPolicy; all others use MlpPolicy.
+        # If sb3-contrib is missing, fall back gracefully to PPO + MlpPolicy.
+        if algorithm == "PPO_LSTM":
+            if not _LSTM_AVAILABLE:
+                import warnings
+                warnings.warn("sb3-contrib not found; falling back to PPO MlpPolicy.")
+                actual_model_class = PPO
+                policy_type = "MlpPolicy"
+            else:
+                actual_model_class = _RecurrentPPO
+                policy_type = "MlpLstmPolicy"
+        else:
+            actual_model_class = model_class  # type: ignore[assignment]
+            policy_type = "MlpPolicy"
+        model: BaseAlgorithm = actual_model_class(policy_type, env, **model_kwargs)
 
         # Build callback list: always include progress callback; optionally live render
         progress_callback = _ProgressCallback(self, run_id=run_id, total_steps=steps)

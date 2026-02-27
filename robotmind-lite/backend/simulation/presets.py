@@ -247,6 +247,121 @@ ENVIRONMENT_PROFILES: dict[str, dict[str, Any]] = {
             "ray": "rgba(56, 189, 248, 0.5)",
         },
     },
+    "smart_nav_v1": {
+        "label": "Smart Navigator V1",
+        "description": (
+            "8-layout curriculum for maximum navigation intelligence. "
+            "24 sensors at 300deg FOV, random spawn+goal every episode, "
+            "obstacle density from easy to maze-like. "
+            "Train with PPO_LSTM + Navigator + 300k steps."
+        ),
+        "metadata": {
+            "supported_control_modes": ["discrete", "continuous"],
+            "env_class": "curriculum",
+        },
+        "world": {
+            "width": 700,
+            "height": 520,
+            "wall_margin": 25.0,
+            "obstacles": [
+                {"x": 200.0, "y": 150.0, "width": 110.0, "height": 30.0},
+                {"x": 450.0, "y": 270.0, "width": 55.0, "height": 150.0},
+                {"x": 150.0, "y": 380.0, "width": 150.0, "height": 35.0},
+            ],
+            "goal": {"x": 580.0, "y": 80.0, "radius": 25.0},
+            "layouts": [
+                [
+                    {"x": 200.0, "y": 150.0, "width": 110.0, "height": 30.0},
+                    {"x": 450.0, "y": 270.0, "width": 55.0, "height": 150.0},
+                    {"x": 150.0, "y": 380.0, "width": 150.0, "height": 35.0}
+                ],
+                [
+                    {"x": 330.0, "y": 90.0,  "width": 30.0, "height": 210.0},
+                    {"x": 100.0, "y": 190.0, "width": 170.0, "height": 30.0},
+                    {"x": 460.0, "y": 340.0, "width": 140.0, "height": 35.0},
+                    {"x": 210.0, "y": 330.0, "width": 35.0, "height": 140.0}
+                ],
+                [
+                    {"x": 230.0, "y": 200.0, "width": 90.0,  "height": 90.0},
+                    {"x": 400.0, "y": 130.0, "width": 50.0,  "height": 180.0},
+                    {"x": 100.0, "y": 350.0, "width": 220.0, "height": 30.0},
+                    {"x": 470.0, "y": 350.0, "width": 85.0,  "height": 60.0},
+                    {"x": 560.0, "y": 180.0, "width": 30.0,  "height": 120.0}
+                ],
+                [
+                    {"x": 195.0, "y": 55.0,  "width": 30.0, "height": 290.0},
+                    {"x": 390.0, "y": 160.0, "width": 30.0, "height": 270.0},
+                    {"x": 500.0, "y": 60.0,  "width": 120.0, "height": 30.0},
+                    {"x": 80.0,  "y": 400.0, "width": 200.0, "height": 30.0},
+                    {"x": 490.0, "y": 390.0, "width": 90.0,  "height": 30.0}
+                ],
+                [
+                    {"x": 155.0, "y": 100.0, "width": 200.0, "height": 30.0},
+                    {"x": 155.0, "y": 100.0, "width": 30.0,  "height": 160.0},
+                    {"x": 430.0, "y": 280.0, "width": 200.0, "height": 30.0},
+                    {"x": 570.0, "y": 130.0, "width": 30.0,  "height": 180.0},
+                    {"x": 250.0, "y": 330.0, "width": 120.0, "height": 30.0}
+                ],
+                [
+                    {"x": 90.0,  "y": 90.0,  "width": 30.0,  "height": 300.0},
+                    {"x": 90.0,  "y": 360.0, "width": 250.0, "height": 30.0},
+                    {"x": 300.0, "y": 90.0,  "width": 30.0,  "height": 150.0},
+                    {"x": 430.0, "y": 90.0,  "width": 30.0,  "height": 130.0},
+                    {"x": 430.0, "y": 180.0, "width": 180.0, "height": 30.0},
+                    {"x": 300.0, "y": 270.0, "width": 200.0, "height": 30.0}
+                ],
+                [
+                    {"x": 180.0, "y": 130.0, "width": 130.0, "height": 25.0},
+                    {"x": 400.0, "y": 130.0, "width": 25.0,  "height": 200.0},
+                    {"x": 120.0, "y": 260.0, "width": 25.0,  "height": 200.0},
+                    {"x": 120.0, "y": 435.0, "width": 320.0, "height": 25.0},
+                    {"x": 490.0, "y": 360.0, "width": 160.0, "height": 25.0},
+                    {"x": 280.0, "y": 280.0, "width": 100.0, "height": 25.0}
+                ],
+                [
+                    {"x": 160.0, "y": 80.0,  "width": 25.0,  "height": 180.0},
+                    {"x": 160.0, "y": 235.0, "width": 180.0, "height": 25.0},
+                    {"x": 315.0, "y": 80.0,  "width": 180.0, "height": 25.0},
+                    {"x": 470.0, "y": 80.0,  "width": 25.0,  "height": 185.0},
+                    {"x": 310.0, "y": 330.0, "width": 25.0,  "height": 160.0},
+                    {"x": 100.0, "y": 360.0, "width": 235.0, "height": 25.0},
+                    {"x": 490.0, "y": 280.0, "width": 155.0, "height": 25.0}
+                ]
+            ]
+        },
+        "sensor": {
+            "ray_count": 24,
+            "ray_length": 220.0,
+            "ray_fov_degrees": 300.0,
+        },
+        "dynamics": {
+            "sensor_noise_std": 0.015,
+            "heading_drift_std": 0.4,
+            "speed_noise_std": 0.025,
+            "turn_noise_std": 0.4,
+            "randomize_spawn": True,
+            "randomize_goal": True,
+            "speed_scale_min": 0.92,
+            "speed_scale_max": 1.08,
+            "turn_scale_min": 0.92,
+            "turn_scale_max": 1.08,
+            "max_steps": 800,
+        },
+        "robot": {
+            "radius": 15.0,
+            "speed": 130.0,
+            "turn_rate_degrees": 12.0,
+        },
+        "visual": {
+            "bg": "#020617",
+            "wall": "#1e293b",
+            "obstacle": "#1e3a5f",
+            "robot": "#38bdf8",
+            "robot_collision": "#ef4444",
+            "ray": "rgba(56,189,248,0.5)",
+            "goal": "#f59e0b",
+        },
+    },
     "curriculum_v1": {
         "label": "Curriculum V1",
         "description": (
@@ -1432,6 +1547,31 @@ MODEL_PROFILES: dict[str, dict[str, Any]] = {
         "learning_rate": 1.5e-4,
         "gamma": 0.995,
         "ent_coef": 0.005,
+    },
+    "navigator": {
+        "label": "Navigator",
+        "description": (
+            "Large [256x3] network with LSTM memory. The LSTM lets the robot "
+            "remember where it has been this episode so it stops revisiting "
+            "the same dead-ends. Use with PPO_LSTM + smart_nav_v1 + 300k steps."
+        ),
+        "policy_kwargs": {"net_arch": [256, 256, 256]},
+        "learning_rate": 1e-4,
+        "gamma": 0.9995,
+        "ent_coef": 0.02,
+        "use_lstm": True,
+    },
+    "expert": {
+        "label": "Expert",
+        "description": (
+            "Maximum capacity [512x3+256] with LSTM. Highest intelligence ceiling. "
+            "Use with PPO_LSTM + smart_nav_v1 + 500k steps."
+        ),
+        "policy_kwargs": {"net_arch": [512, 512, 512, 256]},
+        "learning_rate": 5e-5,
+        "gamma": 0.9995,
+        "ent_coef": 0.025,
+        "use_lstm": True,
     },
 }
 
