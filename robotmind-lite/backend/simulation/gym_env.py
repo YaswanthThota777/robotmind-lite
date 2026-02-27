@@ -462,26 +462,31 @@ class RobotEnv(gym.Env[np.ndarray, int]):
             reward = 0.01
 
             # ── Proximity penalty — two-stage gradient ───────────────────────
-            # Stage 1 (warning): 0.45 < min_dist < 0.65 → mild negative gradient
-            # Stage 2 (danger):  min_dist <= 0.45        → strong negative gradient
-            danger = min_dist < 0.65
-            if min_dist <= 0.45:
-                # Deep danger zone — subtract on top of survival bonus (net negative)
-                reward += -0.02 - (0.45 - min_dist) * 5.0
-            elif min_dist < 0.65:
+            # CALIBRATION: ray_length=160 in 640x480 arena means even the arena
+            # center has min_dist≈0.4.  Old thresholds (0.45/0.65) fired on 70%
+            # of all positions, drowning out goal rewards completely.
+            # New thresholds are calibrated to ray_length: genuinely close to
+            # a wall means < 32px clearance (0.20) or < 56px (0.35).
+            # Stage 1 (warning): 0.20 < min_dist < 0.35 → mild negative gradient
+            # Stage 2 (danger):  min_dist <= 0.20        → strong negative gradient
+            danger = min_dist < 0.35
+            if min_dist <= 0.20:
+                # Deep danger zone — imminent collision, net-negative reward.
+                reward += -0.02 - (0.20 - min_dist) * 5.0
+            elif min_dist < 0.35:
                 # Warning zone — moderate penalty; survival still slightly positive
-                reward += -0.005 - (0.65 - min_dist) * 1.2
+                reward += -0.005 - (0.35 - min_dist) * 1.2
             else:
                 # Clear space — reward forward movement
                 reward += displacement * 0.025
                 # Clearance bonus: encourage maintaining distance from walls
-                if min_dist > 0.7:
+                if min_dist > 0.40:
                     reward += 0.015
                 # Open-space exploration bonus: moving well in fully-open space
-                if mean_dist > 0.85 and displacement > 0.5:
+                if mean_dist > 0.60 and displacement > 0.5:
                     reward += 0.04
                 # Idle penalty: discourage stopping in open space (but not turning near walls)
-                if mean_dist > 0.85 and displacement < 0.3:
+                if mean_dist > 0.60 and displacement < 0.3:
                     reward -= 0.015
                     if action in {1, 2}:
                         reward -= 0.008

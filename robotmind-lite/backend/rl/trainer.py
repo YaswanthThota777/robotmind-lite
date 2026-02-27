@@ -14,7 +14,7 @@ import torch
 from gymnasium.wrappers import RecordEpisodeStatistics
 from stable_baselines3 import A2C, DDPG, DQN, PPO, SAC, TD3
 from stable_baselines3.common.base_class import BaseAlgorithm
-from stable_baselines3.common.callbacks import BaseCallback, CallbackList
+from stable_baselines3.common.callbacks import BaseCallback, CallbackList, EvalCallback as _EvalCallback
 from stable_baselines3.common.vec_env import DummyVecEnv, VecNormalize
 
 try:
@@ -24,6 +24,7 @@ except ImportError:
     _RecurrentPPO = None  # type: ignore[assignment]
     _LSTM_AVAILABLE = False
 
+import copy as _copy_module
 from backend.config import settings
 from backend.database import (
     add_training_metric,
@@ -45,6 +46,17 @@ from backend.rl.live_render_callback import LiveRenderCallback
 from backend.simulation.gym_env import ContinuousRobotEnv, CurriculumRobotEnv, RobotEnv, VisitedGridWrapper
 from backend.simulation.presets import get_environment_profile, get_model_profile
 from backend.ws import training_stream
+
+def _linear_schedule(initial_lr: float):
+    """Linear LR schedule: decays from initial_lr → near-zero over training.
+    
+    Why: prevents underfitting early (full LR) and overfitting late (decayed LR).
+    Standard in production PPO (OpenAI Five, SB3 docs recommend this for PPO).
+    """
+    def _schedule(progress_remaining: float) -> float:
+        return max(1e-7, progress_remaining * initial_lr)
+    return _schedule
+
 
 SUPPORTED_ALGORITHMS: dict[str, dict[str, object]] = {
     "PPO": {
@@ -102,9 +114,12 @@ ALGORITHM_DEFAULTS: dict[str, dict[str, object]] = {
         "batch_size": 64,
         "gae_lambda": 0.95,
         "gamma": 0.995,        # higher gamma → robot values future survival highly
-        "ent_coef": 0.015,     # encourages exploration; prevents premature convergence
+        "ent_coef": 0.02,      # slightly higher encourages early exploration
         "clip_range": 0.2,
-        "n_epochs": 10,
+        # n_epochs=6 not 10: fewer gradient passes per rollout prevents overfitting
+        # to the specific episodes in the current rollout buffer.  SB3 default=10
+        # is too high for environments where episode statistics vary widely.
+        "n_epochs": 6,
     },
     "A2C": {
         "gae_lambda": 0.95,
@@ -155,7 +170,7 @@ ALGORITHM_DEFAULTS: dict[str, dict[str, object]] = {
         "gamma": 0.9995,
         "ent_coef": 0.02,
         "clip_range": 0.2,
-        "n_epochs": 10,
+        "n_epochs": 6,   # same rationale as PPO: fewer passes prevents overfitting
     },
 }
 
@@ -465,23 +480,93 @@ class TrainingManager:
                 norm_obs=True,
                 norm_reward=True,
                 clip_obs=10.0,
-                clip_reward=10.0,
+                # BUG FIX: clip_reward=10.0 destroyed the goal signal (+100 reward)
+                # by capping it at 10 — making goal-reaching only 10x better than
+                # a normal step instead of 100x.  Now 100.0 lets the full goal
+                # signal through and the agent clearly learns to seek goals.
+                clip_reward=100.0,
                 gamma=0.9995,
             )
         else:
             env = vec_env
 
+        # ── Eval env for anti-overfitting (held-out evaluation) ──────────────
+        # Creates a separate environment that is NEVER used for training —
+        # only for evaluating the policy every N steps.  SB3's EvalCallback
+        # saves the best model (not just the final one) based on mean eval reward.
+        # This is the industry standard solution to overfitting in RL:
+        # the model sees thousands of episodes from different random seeds during
+        # training, but is only saved if it also performs well on the eval env.
+        _eval_env_class = str(
+            env_profile.get("metadata", {}).get("env_class", "")
+        ).lower()
+        def _make_eval_env() -> Any:
+            if control_mode == "continuous":
+                _e: Any = ContinuousRobotEnv(profile=environment_profile)
+            elif _eval_env_class == "curriculum":
+                _e = CurriculumRobotEnv(profile=environment_profile)
+            else:
+                _e = RobotEnv(profile=environment_profile)
+            if memory_mode == "visited_grid":
+                _e = VisitedGridWrapper(_e)
+            return RecordEpisodeStatistics(_e)
+
+        _eval_vec = DummyVecEnv([_make_eval_env])
+        _eval_freq = max(5_000, steps // 20)  # evaluate ~20 times during training
+
+        if algorithm in _NORMALIZE_ALGOS:
+            # Wrap eval env in VecNormalize (training=False so stats don't update).
+            # Before each eval, sync obs_rms from training env so normalized
+            # observations are on the same scale as training.
+            _eval_vn: Any = VecNormalize(
+                _eval_vec, norm_obs=True, norm_reward=False, clip_obs=10.0, training=False
+            )
+            class _SyncedEvalCallback(_EvalCallback):
+                """EvalCallback that syncs VecNormalize stats before each eval."""
+                def _on_step(self) -> bool:
+                    if isinstance(env, VecNormalize) and isinstance(_eval_vn, VecNormalize):
+                        _eval_vn.obs_rms = _copy_module.deepcopy(env.obs_rms)
+                        _eval_vn.clip_obs = env.clip_obs
+                    return super()._on_step()
+            _eval_cb: BaseCallback = _SyncedEvalCallback(
+                _eval_vn,
+                best_model_save_path=str(settings.model_dir),
+                eval_freq=_eval_freq,
+                n_eval_episodes=12,
+                deterministic=True,
+                render=False,
+                verbose=0,
+            )
+        else:
+            _eval_cb = _EvalCallback(
+                _eval_vec,
+                best_model_save_path=str(settings.model_dir),
+                eval_freq=_eval_freq,
+                n_eval_episodes=12,
+                deterministic=True,
+                render=False,
+                verbose=0,
+            )
+
+        # ── Policy kwargs + model hyperparams ─────────────────────────────────
         # Strip internal-only flags from policy_kwargs before handing to SB3.
         # 'use_lstm' is our own marker telling the trainer to use MlpLstmPolicy;
         # it is not a valid SB3 policy_kwargs key and would cause an error.
-        import copy as _copy
-        _policy_kwargs = _copy.deepcopy(dict(model_profile_cfg["policy_kwargs"]))
+        _policy_kwargs = _copy_module.deepcopy(dict(model_profile_cfg["policy_kwargs"]))
         _policy_kwargs.pop("use_lstm", None)  # remove if present
+        # ── Learning rate: use linear decay schedule for on-policy algorithms ─
+        # Linear decay: LR starts full, decays to ~0 over training.
+        # WHY: prevents underfitting in early steps (full exploration signal)
+        # and prevents overfitting in late steps (small updates, fine-tuning).
+        # This is the default recommendation in PPO papers and SB3 docs.
+        _LR_SCHEDULE_ALGOS = {"PPO", "PPO_LSTM", "A2C"}
+        _base_lr = float(model_profile_cfg["learning_rate"])
+        _effective_lr = _linear_schedule(_base_lr) if algorithm in _LR_SCHEDULE_ALGOS else _base_lr
         model_kwargs: dict[str, object] = {
             "verbose": 0,
             "device": "cpu",
             "policy_kwargs": _policy_kwargs,
-            "learning_rate": model_profile_cfg["learning_rate"],
+            "learning_rate": _effective_lr,
         }
         # Apply algorithm-specific defaults (stable learning baselines per algorithm)
         algo_defaults = ALGORITHM_DEFAULTS.get(algorithm, {})
@@ -518,15 +603,15 @@ class TrainingManager:
             policy_type = "MlpPolicy"
         model: BaseAlgorithm = actual_model_class(policy_type, env, **model_kwargs)
 
-        # Build callback list: always include progress callback; optionally live render
+        # Build callback list: progress + eval (anti-overfit) + optional live render
         progress_callback = _ProgressCallback(self, run_id=run_id, total_steps=steps)
         if live_render:
             render_callback = LiveRenderCallback(
                 vec_env=env, render_freq=render_freq, verbose=1
             )
-            callback: BaseCallback = CallbackList([progress_callback, render_callback])
+            callback: BaseCallback = CallbackList([progress_callback, _eval_cb, render_callback])
         else:
-            callback = progress_callback
+            callback = CallbackList([progress_callback, _eval_cb])
 
         model.learn(total_timesteps=steps, callback=callback)
 
