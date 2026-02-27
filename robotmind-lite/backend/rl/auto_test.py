@@ -110,6 +110,32 @@ def run_auto_test(
 
     model = model_class.load(str(model_file))
 
+    # ── Load VecNormalize stats for obs normalization ────────────────────────
+    # PPO/A2C were trained with VecNormalize. Without restoring those stats
+    # the policy sees raw [0-1] inputs and appears to ignore sensor values.
+    # Convention: saved alongside model as <stem>.vecnorm.pkl
+    import pickle as _pickle
+    _obs_rms = None
+    _clip_obs = 10.0
+    _vn_candidate = model_file.parent / (model_file.stem + ".vecnorm.pkl")
+    if _vn_candidate.exists():
+        try:
+            with _vn_candidate.open("rb") as _fh:
+                _vn = _pickle.load(_fh)
+            _obs_rms = _vn.obs_rms
+            _clip_obs = float(getattr(_vn, "clip_obs", 10.0))
+        except Exception:
+            pass  # degrade gracefully
+
+    def _normalize_obs(raw: np.ndarray) -> np.ndarray:
+        if _obs_rms is None:
+            return raw
+        return np.clip(
+            (np.asarray(raw, dtype=np.float32) - _obs_rms.mean)
+            / np.sqrt(_obs_rms.var + 1e-8),
+            -_clip_obs, _clip_obs,
+        ).astype(np.float32)
+
     # ── Build env factory ────────────────────────────────────────────────────
     def _make_env(profile: str) -> Any:
         env_cfg = get_environment_profile(profile)
@@ -183,7 +209,7 @@ def run_auto_test(
 
                 while True:
                     safe_obs = _safe_obs(obs, env_obs_dim)
-                    action, _ = model.predict(safe_obs, deterministic=True)
+                    action, _ = model.predict(_normalize_obs(safe_obs), deterministic=True)
                     if control_mode != "continuous":
                         try:
                             action = int(action)

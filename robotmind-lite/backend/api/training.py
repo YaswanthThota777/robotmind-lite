@@ -456,6 +456,35 @@ async def test_model(payload: TestModelRequest) -> dict[str, object]:
     # Model has goal sensing if obs weren't trimmed and env has goal
     model_has_goal = env_has_goal and not obs_trimmed
 
+    # ── Load VecNormalize stats for obs normalization ────────────────────────
+    # PPO/A2C/PPO_LSTM are trained with VecNormalize (zero-mean/unit-var obs).
+    # Without re-applying those stats at inference the model sees raw [0-1]
+    # values and appears to ignore all sensor inputs entirely.
+    import pickle as _pickle
+    _obs_rms = None
+    _clip_obs = 10.0
+    _vecnorm_file = run.get("vecnorm_path")
+    if _vecnorm_file:
+        _vp = Path(_vecnorm_file)
+        if _vp.exists():
+            try:
+                with _vp.open("rb") as _fh:
+                    _vn = _pickle.load(_fh)
+                _obs_rms = _vn.obs_rms
+                _clip_obs = float(getattr(_vn, "clip_obs", 10.0))
+            except Exception:
+                pass  # degrade gracefully — raw obs are better than a crash
+
+    def _normalize_obs(obs: np.ndarray) -> np.ndarray:
+        """Apply VecNormalize statistics before feeding obs to the policy."""
+        if _obs_rms is None:
+            return obs
+        return np.clip(
+            (np.asarray(obs, dtype=np.float32) - _obs_rms.mean)
+            / np.sqrt(_obs_rms.var + 1e-8),
+            -_clip_obs, _clip_obs,
+        ).astype(np.float32)
+
     episode_rewards: list[float] = []
     episode_steps: list[int] = []
     episode_collisions: list[int] = []
@@ -477,7 +506,7 @@ async def test_model(payload: TestModelRequest) -> dict[str, object]:
                     current_trajectory.append(env.get_state())
 
                 while True:
-                    action, _ = model.predict(observation, deterministic=payload.deterministic)
+                    action, _ = model.predict(_normalize_obs(observation), deterministic=payload.deterministic)
                     if control_mode != "continuous":
                         try:
                             action = int(action)

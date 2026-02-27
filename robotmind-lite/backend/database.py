@@ -56,6 +56,7 @@ def init_db() -> None:
                     "deployment_ready": "INTEGER",
                     "memory_mode": "TEXT",
                     "goal_randomize": "INTEGER",
+                    "vecnorm_path": "TEXT",
                 },
             )
             connection.execute(

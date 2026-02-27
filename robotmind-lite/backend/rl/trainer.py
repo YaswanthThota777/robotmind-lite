@@ -620,6 +620,17 @@ class TrainingManager:
         onnx_path = settings.model_dir / f"{artifact_prefix}_robotmind_{timestamp}.onnx"
 
         model.save(str(model_path))
+
+        # Save VecNormalize obs stats so ALL inference (test / auto-test) can
+        # normalize observations the same way as during training.
+        # Without this, the model receives raw [0-1] observations while its
+        # policy expects zero-mean/unit-variance inputs — causing it to appear
+        # unresponsive to sensor values and fail in unseen environments.
+        _vecnorm_path: "Path | None" = None
+        if isinstance(env, VecNormalize):
+            _vecnorm_path = settings.model_dir / f"{artifact_prefix}_robotmind_{timestamp}.vecnorm.pkl"
+            env.save(str(_vecnorm_path))
+
         export_model_to_onnx(model, onnx_path, observation_dim=obs_dim)
 
         sb3_validation = validate_sb3_model_runtime(model, obs_dim)
@@ -677,6 +688,7 @@ class TrainingManager:
             model_path=str(model_path),
             onnx_path=str(onnx_path),
             deployment_ready=int(_deployment_ready),
+            vecnorm_path=str(_vecnorm_path) if _vecnorm_path else None,
         )
 
         env.close()
@@ -685,6 +697,7 @@ class TrainingManager:
             "model_path": str(model_path),
             "onnx_path": str(onnx_path),
             "completed_at": completed_at,
+            "vecnorm_path": str(_vecnorm_path) if _vecnorm_path else None,
             "metrics": metrics,
             "deployment_ready": bool(sb3_validation.get("ok") and onnx_validation.get("ok")),
             "deployment_manifest_path": str(manifest_path),
