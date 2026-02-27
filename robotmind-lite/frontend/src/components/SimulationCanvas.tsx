@@ -4,11 +4,8 @@ import type { SensorValue, SimulationState, SimulationVisual } from "../types";
 const canvasSize = { width: 800, height: 500 };
 const wallPadding = 40;
 
-const obstacles = [
-  { x: 220, y: 140, width: 140, height: 30 },
-  { x: 520, y: 240, width: 60, height: 160 },
-  { x: 160, y: 360, width: 180, height: 40 },
-];
+// Default fallback obstacles for local demo mode (empty — no phantom objects).
+const DEFAULT_OBSTACLES: Array<{ x: number; y: number; width: number; height: number }> = [];
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
@@ -50,25 +47,35 @@ const raySegmentIntersection = (
   return null;
 };
 
-const buildSegments = () => {
-  const segments: Array<[number, number, number, number]> = [];
-
-  segments.push([wallPadding, wallPadding, canvasSize.width - wallPadding, wallPadding]);
-  segments.push([canvasSize.width - wallPadding, wallPadding, canvasSize.width - wallPadding, canvasSize.height - wallPadding]);
-  segments.push([canvasSize.width - wallPadding, canvasSize.height - wallPadding, wallPadding, canvasSize.height - wallPadding]);
-  segments.push([wallPadding, canvasSize.height - wallPadding, wallPadding, wallPadding]);
-
-  obstacles.forEach((obs) => {
-    segments.push([obs.x, obs.y, obs.x + obs.width, obs.y]);
-    segments.push([obs.x + obs.width, obs.y, obs.x + obs.width, obs.y + obs.height]);
-    segments.push([obs.x + obs.width, obs.y + obs.height, obs.x, obs.y + obs.height]);
-    segments.push([obs.x, obs.y + obs.height, obs.x, obs.y]);
+/**
+ * Build raycasting segments for the local demo from dynamic world parameters.
+ * wallMargin / worldW / worldH are in world-space pixels (NOT canvas pixels).
+ * The scale factor converts world → canvas coordinates.
+ */
+const buildDynamicSegments = (
+  wallMargin: number,
+  worldW: number,
+  worldH: number,
+  dynObstacles: Array<{ x: number; y: number; width: number; height: number }>,
+): Array<[number, number, number, number]> => {
+  const segs: Array<[number, number, number, number]> = [];
+  const m = wallMargin;
+  const W = worldW;
+  const H = worldH;
+  // Arena boundary walls
+  segs.push([m, m, W - m, m]);
+  segs.push([W - m, m, W - m, H - m]);
+  segs.push([W - m, H - m, m, H - m]);
+  segs.push([m, H - m, m, m]);
+  // Obstacle edges
+  dynObstacles.forEach((obs) => {
+    segs.push([obs.x, obs.y, obs.x + obs.width, obs.y]);
+    segs.push([obs.x + obs.width, obs.y, obs.x + obs.width, obs.y + obs.height]);
+    segs.push([obs.x + obs.width, obs.y + obs.height, obs.x, obs.y + obs.height]);
+    segs.push([obs.x, obs.y + obs.height, obs.x, obs.y]);
   });
-
-  return segments;
+  return segs;
 };
-
-const segments = buildSegments();
 
 type SimulationCanvasProps = {
   onSensors: (values: SensorValue[]) => void;
@@ -370,16 +377,21 @@ export const SimulationCanvas = ({
   };
 
   const detectCollision = (x: number, y: number, radius: number) => {
+    // Use live backend world dimensions if available, otherwise canvas defaults
+    const bs = backendStateRef.current;
+    const wm = bs?.wall_margin ?? wallPadding;
+    const wW = bs?.world_width  ?? canvasSize.width;
+    const wH = bs?.world_height ?? canvasSize.height;
     if (
-      x - radius < wallPadding ||
-      x + radius > canvasSize.width - wallPadding ||
-      y - radius < wallPadding ||
-      y + radius > canvasSize.height - wallPadding
+      x - radius < wm ||
+      x + radius > wW - wm ||
+      y - radius < wm ||
+      y + radius > wH - wm
     ) {
       return true;
     }
-
-    return obstacles.some((obs) => {
+    const dynObs = bs?.obstacles ?? DEFAULT_OBSTACLES;
+    return dynObs.some((obs) => {
       const closestX = clamp(x, obs.x, obs.x + obs.width);
       const closestY = clamp(y, obs.y, obs.y + obs.height);
       const dx = x - closestX;
@@ -426,13 +438,21 @@ export const SimulationCanvas = ({
     const rayLen   = projectRobot?.sensorRange ?? 220; // world units (60-300)
     const angles   = getRayAngles(entity.angle, rayCount);
 
+    // Build segments dynamically from live backend state (or safe defaults)
+    const bs      = backendStateRef.current;
+    const wm      = bs?.wall_margin  ?? wallPadding;
+    const wW      = bs?.world_width  ?? canvasSize.width;
+    const wH      = bs?.world_height ?? canvasSize.height;
+    const dynObs  = bs?.obstacles    ?? DEFAULT_OBSTACLES;
+    const dynSegs = buildDynamicSegments(wm, wW, wH, dynObs);
+
     sensors.current = sensors.current.map((_, index) => {
       const angle = angles[index];
       const dirX = Math.cos(angle);
       const dirY = Math.sin(angle);
 
       let minDistance = rayLen;
-      segments.forEach((segment) => {
+      dynSegs.forEach((segment) => {
         const [x1, y1, x2, y2] = segment;
         const distance = raySegmentIntersection(entity.x, entity.y, dirX, dirY, x1, y1, x2, y2);
         if (distance !== null) {
@@ -488,7 +508,7 @@ export const SimulationCanvas = ({
     ctx.shadowBlur = 0;
 
     // Enhanced obstacles with gradient and shadow
-    const renderObstacles = backendState?.obstacles ?? obstacles;
+    const renderObstacles = backendState?.obstacles ?? DEFAULT_OBSTACLES;
     renderObstacles.forEach((obs) => {
       const obsGradient = ctx.createLinearGradient(
         obs.x * scale, 

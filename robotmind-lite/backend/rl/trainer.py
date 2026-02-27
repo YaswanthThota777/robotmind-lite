@@ -204,12 +204,21 @@ class _ProgressCallback(BaseCallback):
         env_state: dict = {}
         try:
             training_env = getattr(self, "training_env", None)
-            if training_env is not None and hasattr(training_env, "envs"):
-                env = training_env.envs[0]
-                target = env.env if hasattr(env, "env") else env
-                if hasattr(target, "get_state"):
-                    env_state = target.get_state()
-                    self.manager.update_env_state_threadsafe(env_state)
+            if training_env is not None:
+                # Unwrap VecNormalize → DummyVecEnv.
+                # VecNormalize stores its inner vec-env in .venv; DummyVecEnv has .envs.
+                _venv = getattr(training_env, "venv", training_env)
+                if hasattr(_venv, "envs"):
+                    _env0 = _venv.envs[0]
+                    # Walk the gym wrapper chain to find a get_state() impl:
+                    # RecordEpisodeStatistics → VisitedGridWrapper → RobotEnv
+                    _candidate: Any = _env0
+                    while _candidate is not None:
+                        if hasattr(_candidate, "get_state"):
+                            env_state = _candidate.get_state()
+                            self.manager.update_env_state_threadsafe(env_state)
+                            break
+                        _candidate = getattr(_candidate, "env", None)
         except Exception:
             pass
 

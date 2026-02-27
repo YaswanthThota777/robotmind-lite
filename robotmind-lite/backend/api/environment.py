@@ -7,9 +7,10 @@ import threading
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from backend.simulation.gym_env import RobotEnv
+from backend.simulation.gym_env import CurriculumRobotEnv, RobotEnv
 from backend.simulation.presets import (
     generate_maze_preset,
+    get_environment_profile,
     list_environment_profiles,
     register_environment_profile,
 )
@@ -22,19 +23,36 @@ class LiveProfileRequest(BaseModel):
     custom_environment: dict[str, object] | None = None
 
 
+def _build_live_env(profile: str) -> RobotEnv:
+    """Instantiate the correct env class for the given profile.
+
+    CurriculumRobotEnv is used for profiles whose metadata declares
+    ``env_class: curriculum`` (multi-layout, randomised spawn/goal).
+    All other profiles use the standard ``RobotEnv``.
+    """
+    try:
+        cfg = get_environment_profile(profile)
+        env_class_flag = str(cfg.get("metadata", {}).get("env_class", "")).lower()
+    except Exception:
+        env_class_flag = ""
+    if env_class_flag == "curriculum":
+        return CurriculumRobotEnv(profile=profile)
+    return RobotEnv(profile=profile)
+
+
 class LiveEnvManager:
     """Single live environment instance for real-time UI preview."""
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self._profile = "arena_basic"
-        self._env = RobotEnv(profile=self._profile)
+        self._env = _build_live_env(self._profile)
         self._env.reset()
 
     def switch_profile(self, profile: str) -> dict[str, object]:
         with self._lock:
             self._profile = profile
-            self._env = RobotEnv(profile=profile)
+            self._env = _build_live_env(profile)
             self._env.reset()
             return self._env.get_state()
 
