@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import { EnvTemplates } from "./EnvTemplates";
 import { EnvBuilder } from "./EnvBuilder";
+import { AutoTestPanel } from "./AutoTestPanel";
 import { SimulationCanvas } from "./SimulationCanvas";
 import { EnvMinimap } from "./EnvMinimap";
 import type { ProfileOption, SimulationState, WorldSummary } from "../types";
@@ -94,6 +95,18 @@ export const QuickTest = ({
   const [ftLoading, setFtLoading] = useState(false);
   const [ftResult, setFtResult] = useState<{ total_steps: number; additional_steps: number } | null>(null);
   const [ftError, setFtError] = useState<string | null>(null);
+
+  // ── auto-test fix callback ───────────────────────────────────────────────
+  const handleAutoTestFix = (fixParams: Record<string, unknown>) => {
+    if (typeof fixParams.steps === "number") setFtSteps(fixParams.steps);
+    if (typeof fixParams.environment_profile === "string") {
+      setEnvProfile(fixParams.environment_profile);
+      setEnvLabel(fixParams.environment_profile.replaceAll("_", " "));
+    }
+    // Scroll to the fine-tune section so the user can trigger it
+    const el = document.getElementById("quicktest-finetune-section");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
 
   // ── state ────────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(false);
@@ -722,6 +735,7 @@ export const QuickTest = ({
               <button
                 onClick={runFineTune}
                 disabled={ftLoading || !runId}
+                id="quicktest-finetune-section"
                 className="w-full py-2 rounded-lg text-xs font-semibold
                            bg-gradient-to-r from-teal-500 to-amber-500
                            hover:from-teal-400 hover:to-amber-400
@@ -732,6 +746,16 @@ export const QuickTest = ({
                   ? `⏳ Training ${ftSteps.toLocaleString()} more steps…`
                   : `▶ Fine-tune ${ftSteps.toLocaleString()} steps`}
               </button>
+            </div>
+
+            {/* ── Automated Behavioral Diagnosis ── */}
+            <div className="mt-1">
+              <AutoTestPanel
+                apiBase={apiBase}
+                runId={runId}
+                defaultEnvProfile={envProfile}
+                onApplyFix={handleAutoTestFix}
+              />
             </div>
 
             </div>{/* end config panel */}

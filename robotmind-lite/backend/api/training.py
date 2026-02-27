@@ -91,6 +91,14 @@ class TestModelRequest(BaseModel):
     goal_randomize: bool | None = None
 
 
+class AutoTestRequest(BaseModel):
+    """Request payload for the automated behavioral test suite."""
+    run_id: int = Field(..., ge=1)
+    environment_profile: str | None = None
+    episodes_per_test: int = Field(default=20, ge=5, le=100)
+    max_steps: int | None = Field(default=None, ge=50, le=10_000)
+
+
 class FineTuneRequest(BaseModel):
     run_id: int = Field(..., ge=1)
     steps: int = Field(default=10_000, ge=500, le=500_000)
@@ -625,6 +633,59 @@ async def fine_tune_model(payload: FineTuneRequest) -> dict[str, object]:
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Fine-tune failed: {exc}") from exc
+
+
+@router.post("/auto-test-model")
+async def auto_test_model(payload: AutoTestRequest) -> dict[str, object]:
+    """Run automated 6-test behavioral diagnostic suite on a trained model.
+
+    Returns structured issue reports with severity grades and actionable
+    fix recommendations for each detected problem.
+    """
+    run = get_training_run(payload.run_id)
+    if run is None:
+        raise HTTPException(status_code=404, detail="Training run not found")
+
+    model_path = run.get("model_path")
+    if not model_path:
+        raise HTTPException(status_code=404, detail="No trained model available for this run")
+
+    model_file = Path(model_path)
+    if not model_file.exists():
+        raise HTTPException(status_code=404, detail=f"Model file not found: {model_file}")
+
+    algorithm = str(run.get("algorithm") or "PPO").upper()
+    if algorithm not in SUPPORTED_ALGORITHMS:
+        raise HTTPException(status_code=422, detail=f"Unsupported algorithm: {algorithm}")
+
+    control_mode = str(SUPPORTED_ALGORITHMS[algorithm]["control_mode"])
+
+    # Resolve environment profile
+    env_profile = payload.environment_profile
+    if not env_profile:
+        env_value = str(run.get("environment") or "")
+        env_profile = env_value.split(":", 1)[1] if ":" in env_value else (env_value or "arena_basic")
+
+    from backend.rl.auto_test import run_auto_test
+
+    try:
+        result = await asyncio.to_thread(
+            run_auto_test,
+            str(model_file),
+            algorithm,
+            env_profile,
+            control_mode,
+            payload.episodes_per_test,
+            payload.max_steps,
+        )
+        result["run_id"] = payload.run_id
+        return result
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Auto-test failed: {exc}") from exc
 
 
 @router.get("/download-model")
