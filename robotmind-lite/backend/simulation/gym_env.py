@@ -187,18 +187,20 @@ class RobotEnv(gym.Env[np.ndarray, int]):
         self._last_x = 0.0
         self._last_y = 0.0
         self._last_goal_dist = 0.0  # initialised properly on first reset()
-        # ── Intelligent navigation memory ────────────────────────────────────
-        # Heading history for spin detection: if the robot spins >360° in 12
-        # steps without translating, it gets a strong penalty (DeepMind-style
-        # locomotion penalty used in MuJoCo Ant/Humanoid environments).
-        self._heading_history: deque[float] = deque(maxlen=12)
-        # Visited-cell exploration map: 16×16 coarse grid of the arena.
-        # Entering a never-visited cell earns a bonus — prevents the model from
-        # staying in one corner and encourages systematic goal search.
-        # This is identical to the curiosity/count-based exploration reward used
-        # by OpenAI in Go-Explore and similar systems.
+        # ── Intelligent navigation memory ──────────────────────────────────────
+        # Heading history for spin detection (window = 20 steps).
+        # With turn_rate ~12 deg/step, 20 steps = max ~240 deg of rotation.
+        # Threshold of 80 deg fires after only ~7 consecutive turning steps,
+        # fixing the original bug where threshold=360 was physically unreachable.
+        self._heading_history: deque[float] = deque(maxlen=20)
+        # Visited-cell exploration map: 16x16 coarse grid of the arena.
         self._visited_cells: set[tuple[int, int]] = set()
         self._visit_grid_size = 16
+        # Stagnation detector: penalise the robot if it hasn't gotten meaningfully
+        # closer to the goal in the last 50 steps.  Prevents wall-hugging orbits
+        # and spinning loops where the robot never commits to reaching the goal.
+        self._stagnation_best_dist: float = float("inf")
+        self._stagnation_steps: int = 0
 
         n_actions = 4 if self.reverse_enabled else 3
         self.action_space = spaces.Discrete(n_actions)
@@ -361,6 +363,8 @@ class RobotEnv(gym.Env[np.ndarray, int]):
             self._last_goal_dist = float(np.sqrt(dx0 * dx0 + dy0 * dy0))
         else:
             self._last_goal_dist = 0.0
+        self._stagnation_best_dist = self._last_goal_dist
+        self._stagnation_steps = 0
         return self._get_observation(), {"status": "reset"}
 
     def step(self, action: int) -> tuple[np.ndarray, float, bool, bool, dict[str, Any]]:
@@ -492,31 +496,34 @@ class RobotEnv(gym.Env[np.ndarray, int]):
 
                 delta = self._last_goal_dist - curr_dist  # positive = closer
                 if delta > 0:
-                    # Approach reward — 5× stronger than before so goal-finding
-                    # dominates over pure wall-avoidance.  Every pixel toward the
-                    # goal gives a clear, dominant signal (DeepMind-style dense
-                    # potential-based reward shaping).
-                    reward += delta * 1.5
+                    # Approach reward: strongest signal in the reward function.
+                    # Every pixel of genuine progress toward goal pays clearly.
+                    reward += delta * 2.0
                 else:
-                    # Moving away penalty — firm but not catastrophic
-                    reward += delta * 0.3
+                    # Moving away penalty — symmetric with approach reward so any
+                    # lateral or backward movement is clearly less profitable.
+                    reward += delta * 1.2
                 self._last_goal_dist = curr_dist
 
-                # Goal-alignment bonus: strongly reward facing the goal.
-                # Was 0.025; now 0.10 — this is the signal that breaks spinning:
-                # the model learns that turning toward the goal PAYS even before
-                # it starts moving, which is how real navigation policies work.
+                # ── Goal-alignment bonus (movement-gated) ────────────────────────
+                # Original bug: alignment reward fired even when standing still,
+                # making spinning-to-face-goal a profitable strategy.
+                # Fix: full bonus ONLY when the robot is actually moving forward.
+                # When stationary, only a tiny nudge so the gradient still points
+                # in the right direction without rewarding motionless turning.
                 goal_angle_rad = float(np.arctan2(gy - curr_y, gx - curr_x))
                 robot_angle_rad = float(np.deg2rad(self.world.robot.angle_degrees))
                 angle_diff = goal_angle_rad - robot_angle_rad
                 angle_diff = float(np.arctan2(np.sin(angle_diff), np.cos(angle_diff)))
                 alignment = float(np.cos(angle_diff))
-                reward += alignment * 0.10
+                if displacement > 0.3:
+                    reward += alignment * 0.15   # reward moving in the right direction
+                else:
+                    reward += alignment * 0.008  # tiny orientation nudge only
 
-                # Proximity urgency: extra bonus when very close to goal
-                # Motivates the final approach — like OpenAI's goal-conditioned bonuses
+                # Proximity urgency: strong pull when very close to goal
                 if curr_dist < 80.0:
-                    reward += (80.0 - curr_dist) * 0.002
+                    reward += (80.0 - curr_dist) * 0.003
 
             # ── Position tracking, exploration & spin detection ──────────────
             curr_x_ = self.world.robot.x
@@ -536,7 +543,7 @@ class RobotEnv(gym.Env[np.ndarray, int]):
             )
             if _cell not in self._visited_cells:
                 self._visited_cells.add(_cell)
-                reward += 0.05  # exploration bonus for visiting new arena region
+                reward += 0.015  # small bonus: exploration helpful but goal must dominate
 
             # ── Heading history for smart spin detection ──────────────────────
             self._heading_history.append(self.world.robot.angle_degrees)
@@ -550,13 +557,19 @@ class RobotEnv(gym.Env[np.ndarray, int]):
                 for _i in range(1, len(_h)):
                     _diff = (_h[_i] - _h[_i - 1] + 180.0) % 360.0 - 180.0
                     _total_turn += abs(_diff)
-                if _total_turn > 360.0 and pos_change < 5.0:
-                    reward -= 0.15  # strong spin penalty — spinning is never optimal
+                # BUG FIX: original threshold=360 deg was physically impossible
+                # to trigger (robot can only rotate ~133 deg in 12 steps at 12
+                # deg/step turn rate).  New threshold=80 deg fires after only
+                # ~7 consecutive turning steps — catches spinning reliably.
+                if _total_turn > 80.0 and pos_change < 3.0:
+                    reward -= 0.50  # hard spin penalty: spinning never reaches goal
 
             # ── Soft stuck penalty (open space only) ─────────────────────────
             if pos_change < 2.0 and not danger:
                 stuck_frac = min(self.current_step / max(1, self.max_steps), 0.6)
-                reward -= 0.025 * (1.0 + stuck_frac)
+                # Raised from 0.025 to 0.08: stuck penalty now clearly outweighs
+                # the +0.01 survival bonus so doing nothing is never profitable.
+                reward -= 0.08 * (1.0 + stuck_frac)
 
             self._last_x = curr_x_
             self._last_y = curr_y_
@@ -569,7 +582,9 @@ class RobotEnv(gym.Env[np.ndarray, int]):
         self.last_reward = reward
         self.last_collision = collided
 
-        terminated = self._consecutive_collisions >= 4
+        # 2 consecutive wall hits = terminated (faster feedback loop than 4).
+        # The model learns wall avoidance more efficiently with quick termination.
+        terminated = self._consecutive_collisions >= 2
         truncated = self.current_step >= self.max_steps or goal_reached
 
         # ── Episode survival completion bonus ─────────────────────────────────
@@ -1267,5 +1282,9 @@ class CurriculumRobotEnv(RobotEnv):
             self._last_goal_dist = float(np.sqrt(dx0 * dx0 + dy0 * dy0))
         else:
             self._last_goal_dist = 0.0
+        # Reset stagnation tracker and heading history for fresh episode.
+        self._stagnation_best_dist = self._last_goal_dist
+        self._stagnation_steps = 0
+        self._heading_history.clear()
 
         return self._get_observation(), {"status": "reset"}
