@@ -131,11 +131,28 @@ def run_auto_test(
             return -1
 
     def _safe_obs(obs: np.ndarray, env_obs_dim: int) -> np.ndarray:
-        """Trim observation if model was trained on fewer dims."""
+        """Reshape observation to exactly match the model's expected input dim.
+
+        Handles three cases:
+          - env_dim == model_dim  → pass through unchanged
+          - env_dim  > model_dim  → trim to model_dim (env has extra sensors)
+          - env_dim  < model_dim  → pad with zeros to model_dim
+            (model was trained with visited-grid or more sensors; unseen dims
+             default to 0 which is a sensible neutral value for all features)
+        """
         model_dim = _get_model_obs_dim()
-        if model_dim > 0 and model_dim < env_obs_dim:
-            return np.asarray(obs[:model_dim], dtype=np.float32)
-        return obs
+        if model_dim <= 0:
+            return obs
+        obs_flat = np.asarray(obs, dtype=np.float32).flatten()
+        cur_dim = len(obs_flat)
+        if cur_dim == model_dim:
+            return obs_flat
+        if cur_dim > model_dim:
+            return obs_flat[:model_dim]
+        # cur_dim < model_dim — pad with zeros
+        padded = np.zeros(model_dim, dtype=np.float32)
+        padded[:cur_dim] = obs_flat
+        return padded
 
     # ── Episode runner ───────────────────────────────────────────────────────
     def _run_episodes(profile: str, n: int, collect_spin: bool = False) -> dict[str, Any]:
